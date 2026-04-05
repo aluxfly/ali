@@ -1,6 +1,0 @@
-2026-04-05 14:41:13,570 [INFO] 开始爬取 2026-04-05 的招标数据...
-2026-04-05 14:41:14,098 [INFO] 访问门户：https://sgccetp.com.cn/portal
-2026-04-05 14:41:15,943 [ERROR] 访问门户失败：Page.goto: net::ERR_CONNECTION_REFUSED at https://sgccetp.com.cn/portal
-Call log:
-  - navigating to "https://sgccetp.com.cn/portal", waiting until "networkidle"
-

@@ -1,9 +1,0 @@
-2026-04-05 14:41:58,562 [INFO] 开始爬取 2026-04-05 的招标数据...
-2026-04-05 14:41:59,075 [INFO] 访问门户：https://ecp.sgcc.com.cn
-2026-04-05 14:42:31,631 [INFO] 查找招标公告链接...
-2026-04-05 14:42:31,632 [INFO] 尝试路径：#/bidNotice/index
-2026-04-05 14:42:36,911 [INFO] 找到 73 个相关链接
-2026-04-05 14:42:36,913 [INFO] 从 #/bidNotice/index 获取到 73 条数据
-2026-04-05 14:42:36,968 [INFO] 总共获取到 67 条数据
-2026-04-05 14:42:36,971 [INFO] JSON 已保存：/home/admin/.openclaw/workspace-technician/projects/project-radar/data/projects_2026-04-05.json
-2026-04-05 14:42:36,972 [INFO] CSV 已保存：/home/admin/.openclaw/workspace-technician/projects/project-radar/data/projects_2026-04-05.csv
