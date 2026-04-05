@@ -22,67 +22,123 @@ const companyInfo = {
  * 解析招标公告文本
  */
 function parseAnnouncement() {
-    const text = document.getElementById('announcementInput').value.trim();
+    console.log('=== 开始解析公告 ===');
+    
+    const inputElement = document.getElementById('announcementInput');
+    if (!inputElement) {
+        console.error('找不到输入框元素');
+        alert('系统错误：找不到输入框，请刷新页面重试');
+        return;
+    }
+    
+    const text = inputElement.value.trim();
     
     if (!text) {
-        alert('请先输入招标公告内容！');
+        alert('请先输入或粘贴招标公告内容！\n\n提示：您可以点击"加载示例"按钮查看示例格式。');
         return;
     }
 
-    // 提取关键信息
-    projectInfo = extractBidInfo(text);
+    console.log('输入文本长度:', text.length);
     
-    // 显示解析结果
-    displayParsedInfo();
-    
-    // 切换到步骤 2
-    showStep(2);
+    try {
+        // 提取关键信息
+        projectInfo = extractBidInfo(text);
+        
+        // 检查是否解析到任何有效信息
+        const hasValidInfo = Object.values(projectInfo).some(v => v && v !== '未识别' && v !== text);
+        
+        if (!hasValidInfo) {
+            console.warn('未能解析到有效信息');
+            alert('⚠️ 未能自动识别公告信息，请检查输入格式是否正确。\n\n确保公告包含以下关键信息：\n- 项目名称\n- 招标人/采购人\n- 项目编号（如有）\n\n您可以手动编辑解析后的信息。');
+        }
+        
+        // 显示解析结果
+        displayParsedInfo();
+        
+        console.log('解析完成，项目信息:', projectInfo);
+        
+        // 切换到步骤 2
+        showStep(2);
+        
+    } catch (error) {
+        console.error('解析过程中发生错误:', error);
+        alert('解析失败：' + error.message + '\n\n请检查输入内容格式，或联系技术支持。');
+    }
 }
 
 /**
  * 从文本中提取标书信息
  */
 function extractBidInfo(text) {
+    console.log('开始解析公告内容，文本长度:', text.length);
+    
     const info = {
         projectName: extractByPatterns(text, [
-            /项目名称 [：:]\s*(.+?)(?:\n|$)/i,
-            /一、项目名称 [：:]\s*(.+?)(?:\n|$)/i,
-            /工程名称 [：:]\s*(.+?)(?:\n|$)/i
+            /项目名称\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /一、项目名称\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /工程名称\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /采购项目名称\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /标的名称\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /包件名称\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         projectNumber: extractByPatterns(text, [
-            /项目编号 [：:]\s*(.+?)(?:\n|$)/i,
-            /招标编号 [：:]\s*(.+?)(?:\n|$)/i
+            /项目编号\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /招标编号\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /采购编号\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /标段编号\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /包件编号\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         tenderer: extractByPatterns(text, [
-            /招标人 [：:]\s*(.+?)(?:\n|$)/i,
-            /采购人 [：:]\s*(.+?)(?:\n|$)/i,
-            /业主单位 [：:]\s*(.+?)(?:\n|$)/i
+            /招标人\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /采购人\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /业主单位\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /建设单位\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /采购单位\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /招标单位\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         bidDeadline: extractByPatterns(text, [
-            /投标截止时间 [：:]\s*(.+?)(?:\n|$)/i,
-            /递交投标文件截止时间 [：:]\s*(.+?)(?:\n|$)/i,
-            /截止时间 [：:]\s*(.+?)(?:\n|$)/i
+            /投标截止时间\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /递交投标文件截止时间\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /投标截止及开标时间\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /截止时间\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /报名截止时间\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /开标时间\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         budget: extractByPatterns(text, [
-            /预算金额 [：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?[万元]?)/i,
-            /招标控制价 [：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?[万元]?)/i,
-            /最高限价 [：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?[万元]?)/i
+            /预算金额\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /招标控制价\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /最高限价\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /项目预算\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /采购预算\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /预算\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i,
+            /投资额\s*[：:]\s*([¥￥]?\s*\d+(?:,\d{3})*(?:\.\d+)?\s*[万元]?)/i
         ]),
         projectLocation: extractByPatterns(text, [
-            /项目地点 [：:]\s*(.+?)(?:\n|$)/i,
-            /实施地点 [：:]\s*(.+?)(?:\n|$)/i,
-            /交货地点 [：:]\s*(.+?)(?:\n|$)/i
+            /项目地点\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /实施地点\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /交货地点\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /服务地点\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /建设地点\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /项目地址\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /工程地点\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         contactName: extractByPatterns(text, [
-            /联系人 [：:]\s*(.+?)(?:\n|$)/i
+            /联系人\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /联系人姓名\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /代理机构联系人\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         contactPhone: extractByPatterns(text, [
-            /联系电话 [：:]\s*(.+?)(?:\n|$)/i,
-            /联系方式 [：:]\s*(.+?)(?:\n|$)/i
+            /联系电话\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /联系方式\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /联系人电话\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /手机\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /电话\s*[：:]\s*(.+?)(?:\n|$)/i,
+            /传真\s*[：:]\s*(.+?)(?:\n|$)/i
         ]),
         rawText: text
     };
 
+    console.log('解析结果:', info);
     return info;
 }
 
@@ -91,11 +147,18 @@ function extractBidInfo(text) {
  */
 function extractByPatterns(text, patterns) {
     for (const pattern of patterns) {
-        const match = text.match(pattern);
-        if (match) {
-            return match[1].trim();
+        try {
+            const match = text.match(pattern);
+            if (match && match[1]) {
+                const result = match[1].trim();
+                console.log('匹配成功 - 模式:', pattern, '结果:', result);
+                return result;
+            }
+        } catch (e) {
+            console.error('正则匹配错误:', pattern, e);
         }
     }
+    console.log('未匹配到任何模式');
     return '未识别';
 }
 
@@ -104,26 +167,49 @@ function extractByPatterns(text, patterns) {
  */
 function displayParsedInfo() {
     const container = document.getElementById('parsedInfo');
+    if (!container) {
+        console.error('找不到 parsedInfo 容器');
+        return;
+    }
     
     const fields = [
-        { label: '项目名称', key: 'projectName', editable: true },
-        { label: '项目编号', key: 'projectNumber', editable: true },
-        { label: '招标人', key: 'tenderer', editable: true },
-        { label: '预算金额', key: 'budget', editable: true },
-        { label: '投标截止时间', key: 'bidDeadline', editable: true },
-        { label: '项目地点', key: 'projectLocation', editable: true },
-        { label: '联系人', key: 'contactName', editable: true },
-        { label: '联系电话', key: 'contactPhone', editable: true }
+        { label: '项目名称', key: 'projectName', editable: true, required: true },
+        { label: '项目编号', key: 'projectNumber', editable: true, required: false },
+        { label: '招标人', key: 'tenderer', editable: true, required: true },
+        { label: '预算金额', key: 'budget', editable: true, required: false },
+        { label: '投标截止时间', key: 'bidDeadline', editable: true, required: false },
+        { label: '项目地点', key: 'projectLocation', editable: true, required: false },
+        { label: '联系人', key: 'contactName', editable: true, required: false },
+        { label: '联系电话', key: 'contactPhone', editable: true, required: false }
     ];
 
-    container.innerHTML = fields.map(field => `
-        <div class="info-item">
-            <div class="info-label">${field.label}</div>
+    let unrecognizedCount = 0;
+    
+    container.innerHTML = fields.map(field => {
+        const value = projectInfo[field.key];
+        const isUnrecognized = !value || value === '未识别' || value === '未填写';
+        
+        if (isUnrecognized) {
+            unrecognizedCount++;
+        }
+        
+        const displayValue = isUnrecognized ? '<span style="color: #999;">未识别（请手动填写）</span>' : value;
+        const style = isUnrecognized ? 'style="border-left: 3px solid #ffc107;"' : 'style="border-left: 3px solid #28a745;"';
+        
+        return `
+        <div class="info-item" ${style}>
+            <div class="info-label">${field.label}${field.required ? '<span style="color: #dc3545; font-size: 12px;"> *</span>' : ''}</div>
             <div class="info-value" ${field.editable ? 'contenteditable="true" onblur="updateInfo(\'' + field.key + '\', this.innerText)"' : ''}>
-                ${projectInfo[field.key] || '未填写'}
+                ${displayValue}
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
+    
+    // 显示提示信息
+    if (unrecognizedCount > 0) {
+        console.log(`有 ${unrecognizedCount} 个字段未识别到，需要手动填写`);
+    }
 }
 
 /**
@@ -137,7 +223,10 @@ function updateInfo(key, value) {
  * 加载示例数据
  */
 function loadSample() {
-    const sample = `项目名称：国网浙江省电力公司 2024 年智能电表采购项目
+    const sample = `【招标公告】国网浙江省电力公司 2024 年智能电表采购项目
+
+一、项目基本信息
+项目名称：国网浙江省电力公司 2024 年智能电表采购项目
 项目编号：SGCC-ZJ-2024-E001
 招标人：国网浙江省电力公司
 预算金额：2500 万元
@@ -147,34 +236,42 @@ function loadSample() {
 联系人：李主任
 联系电话：0571-88888888
 
-一、项目概况
+二、项目概况
 为满足智能电网建设需要，国网浙江省电力公司拟采购一批智能电表，包括单相智能电表 50000 只、三相智能电表 10000 只。
 
-二、技术要求
+三、技术要求
 1. 符合国家电网公司智能电表技术规范
 2. 支持远程抄表功能
 3. 精度等级：单相 1 级，三相 0.5S 级
 4. 工作温度：-25℃~+60℃
 5. 质保期：5 年
 
-三、资质要求
+四、资质要求
 1. 具有独立法人资格
 2. 具备电力行业相关资质证书
 3. 具有类似项目业绩（近 3 年合同金额 1000 万元以上）
 4. 通过 ISO9001 质量管理体系认证
 
-四、工期要求
+五、工期要求
 合同签订后 90 日内完成全部供货和安装调试。
 
-五、评标办法
+六、评标办法
 综合评分法，其中：
 - 技术方案：45 分
 - 商务报价：35 分
 - 企业资质：10 分
-- 售后服务：10 分`;
+- 售后服务：10 分
 
-    document.getElementById('announcementInput').value = sample;
-    parseAnnouncement();
+七、投标文件递交
+1. 递交截止时间：2024 年 7 月 15 日 9:30
+2. 递交地点：浙江省杭州市 XX 路 XX 号会议室
+3. 逾期送达的投标文件将不予受理`;
+
+    const inputElement = document.getElementById('announcementInput');
+    if (inputElement) {
+        inputElement.value = sample;
+        console.log('示例数据已加载');
+    }
 }
 
 /**
