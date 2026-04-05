@@ -10,6 +10,10 @@
     .project-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .detail-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 6px 0; }
     .detail-label { font-weight: 600; color: #6b7280; }
+    .pagination-btn { padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+    .pagination-btn:hover { background: #f3f4f6; }
+    .pagination-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -27,13 +31,13 @@
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
       <div class="flex flex-wrap gap-4">
-        <div class="flex-1 min-w-[200px]">
+        <div class="flex-1 min-w-[180px]">
           <label class="block text-sm font-medium text-gray-700 mb-1">地区筛选</label>
           <select id="filter-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             <option value="">全部地区</option>
           </select>
         </div>
-        <div class="flex-1 min-w-[200px]">
+        <div class="flex-1 min-w-[180px]">
           <label class="block text-sm font-medium text-gray-700 mb-1">类型筛选</label>
           <select id="filter-type" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             <option value="">全部类型</option>
@@ -43,16 +47,33 @@
             <option value="变更">变更</option>
           </select>
         </div>
+        <div class="flex-1 min-w-[180px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">发布日期</label>
+          <input type="date" id="filter-date" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
         <div class="flex-1 min-w-[200px]">
           <label class="block text-sm font-medium text-gray-700 mb-1">搜索</label>
           <input type="text" id="search-input" placeholder="关键词搜索..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2">
+        <button onclick="clearFilters()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">清除所有筛选</button>
       </div>
     </div>
 
     <!-- Project List -->
     <div id="project-list" class="space-y-4">
       <!-- Projects will be rendered here -->
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="mt-6 flex items-center justify-between bg-white rounded-lg shadow p-4">
+      <div class="text-sm text-gray-600" id="pagination-info">
+        共 0 条 | 第 1/1 页
+      </div>
+      <div class="flex items-center gap-2" id="pagination-controls">
+        <!-- Pagination buttons will be rendered here -->
+      </div>
     </div>
 
     <!-- Loading -->
@@ -70,7 +91,13 @@
 
   <script>
     let allProjects = [];
+    let filteredProjects = [];
     let regions = new Set();
+    
+    // Pagination settings
+    const ITEMS_PER_PAGE = 20;
+    let currentPage = 1;
+    let totalPages = 1;
 
     // Render a single project card
     function renderProject(project, index) {
@@ -141,31 +168,113 @@
 
     // Toggle project detail expansion
     function toggleProject(index) {
-      const project = allProjects[index];
-      project._expanded = !project._expanded;
-      renderProjects();
+      const project = allProjects.find(p => p.title === filteredProjects[index].title && p.publish_date === filteredProjects[index].publish_date);
+      if (project) {
+        project._expanded = !project._expanded;
+        renderPage(currentPage);
+      }
     }
 
-    // Filter and render projects
-    function renderProjects() {
+    // Filter projects
+    function filterProjects() {
       const regionFilter = document.getElementById('filter-region').value;
       const typeFilter = document.getElementById('filter-type').value;
+      const dateFilter = document.getElementById('filter-date').value;
       const searchQuery = document.getElementById('search-input').value.toLowerCase();
 
-      const filtered = allProjects.filter(p => {
+      filteredProjects = allProjects.filter(p => {
         const matchRegion = !regionFilter || p.region === regionFilter;
         const matchType = !typeFilter || (p.description && p.description.includes(typeFilter));
+        const matchDate = !dateFilter || (p.publish_date && p.publish_date.startsWith(dateFilter));
         const matchSearch = !searchQuery || p.title.toLowerCase().includes(searchQuery);
-        return matchRegion && matchType && matchSearch;
+        return matchRegion && matchType && matchDate && matchSearch;
       });
 
+      // Update pagination
+      totalPages = Math.max(1, Math.ceil(filteredProjects.length / ITEMS_PER_PAGE));
+      currentPage = Math.min(currentPage, totalPages);
+      
+      renderPage(currentPage);
+    }
+
+    // Render pagination controls
+    function renderPagination(page, total) {
+      const controlsEl = document.getElementById('pagination-controls');
+      const infoEl = document.getElementById('pagination-info');
+      
+      infoEl.textContent = `共 ${filteredProjects.length} 条 | 第 ${page}/${total} 页`;
+      
+      let html = '';
+      
+      // Previous button
+      html += `<button class="pagination-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})">← 上一页</button>`;
+      
+      // Page numbers
+      const maxVisible = 5;
+      let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+      let endPage = Math.min(total, startPage + maxVisible - 1);
+      
+      if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+      
+      if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) {
+          html += `<span class="px-2 text-gray-400">...</span>`;
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      
+      if (endPage < total) {
+        if (endPage < total - 1) {
+          html += `<span class="px-2 text-gray-400">...</span>`;
+        }
+        html += `<button class="pagination-btn" onclick="goToPage(${total})">${total}</button>`;
+      }
+      
+      // Next button
+      html += `<button class="pagination-btn" ${page >= total ? 'disabled' : ''} onclick="goToPage(${page + 1})">下一页 →</button>`;
+      
+      controlsEl.innerHTML = html;
+    }
+
+    // Render current page
+    function renderPage(page) {
+      const start = (page - 1) * ITEMS_PER_PAGE;
+      const end = Math.min(start + ITEMS_PER_PAGE, filteredProjects.length);
+      const pageProjects = filteredProjects.slice(start, end);
+
       const listEl = document.getElementById('project-list');
-      listEl.innerHTML = filtered.map((p, i) => {
-        const originalIndex = allProjects.indexOf(p);
-        return renderProject(p, originalIndex);
+      listEl.innerHTML = pageProjects.map((p, i) => {
+        const originalIndex = filteredProjects.indexOf(p);
+        return renderProject(p, start + i);
       }).join('');
 
-      document.getElementById('stats-total').textContent = `显示 ${filtered.length} / ${allProjects.length} 个项目`;
+      renderPagination(page, totalPages);
+      document.getElementById('stats-total').textContent = `显示 ${filteredProjects.length} / ${allProjects.length} 个项目`;
+    }
+
+    // Go to specific page
+    function goToPage(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderPage(page);
+      // Scroll to top of project list
+      document.getElementById('project-list').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Clear all filters
+    function clearFilters() {
+      document.getElementById('filter-region').value = '';
+      document.getElementById('filter-type').value = '';
+      document.getElementById('filter-date').value = '';
+      document.getElementById('search-input').value = '';
+      currentPage = 1;
+      filterProjects();
     }
 
     // Populate region dropdown
@@ -196,7 +305,9 @@
         });
         
         populateRegions();
-        renderProjects();
+        filteredProjects = [...allProjects];
+        totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+        renderPage(1);
         
         document.getElementById('loading').classList.add('hidden');
       } catch (err) {
@@ -207,9 +318,10 @@
     }
 
     // Event listeners
-    document.getElementById('filter-region').addEventListener('change', renderProjects);
-    document.getElementById('filter-type').addEventListener('change', renderProjects);
-    document.getElementById('search-input').addEventListener('input', renderProjects);
+    document.getElementById('filter-region').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('filter-type').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('filter-date').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('search-input').addEventListener('input', () => { currentPage = 1; filterProjects(); });
 
     // Initialize
     loadData();
