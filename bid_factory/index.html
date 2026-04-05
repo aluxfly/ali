@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标书工厂 - 智能标书生成器</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 标书工厂</h1>
+            <p class="subtitle">智能标书生成器 - 上传招标公告，一键生成完整标书</p>
+        </header>
+
+        <main>
+            <!-- 步骤 1: 上传招标公告 -->
+            <section class="step" id="step1">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <h2>上传招标公告</h2>
+                </div>
+                <div class="step-content">
+                    <textarea 
+                        id="announcementInput" 
+                        placeholder="请粘贴招标公告内容...
+
+示例格式：
+项目名称：某某采购项目
+项目编号：XXX-2024-001
+招标人：某某单位
+预算金额：XXX 万元
+投标截止时间：2024 年 X 月 X 日
+项目地点：某某市
+技术要求：...
+资质要求：..."
+                        rows="12"></textarea>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="parseAnnouncement()">
+                            🔍 解析公告信息
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadSample()">
+                            📋 加载示例
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 步骤 2: 确认信息 -->
+            <section class="step" id="step2" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <h2>确认项目信息</h2>
+                </div>
+                <div class="step-content">
+                    <div class="info-grid" id="parsedInfo">
+                        <!-- 动态填充 -->
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="backToStep1()">
+                            ← 返回修改
+                        </button>
+                        <button class="btn btn-primary" onclick="generateBid()">
+                            ✨ 生成标书
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 步骤 3: 生成进度 -->
+            <section class="step" id="step3" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <h2>生成标书</h2>
+                </div>
+                <div class="step-content">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">正在生成...</p>
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 步骤 4: 下载结果 -->
+            <section class="step" id="step4" style="display: none;">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <h2>下载标书</h2>
+                </div>
+                <div class="step-content">
+                    <div class="success-message">
+                        <div class="success-icon">✅</div>
+                        <h3>标书生成完成！</h3>
+                        <p>请选择要下载的文档：</p>
+                    </div>
+                    <div class="download-grid" id="downloadOptions">
+                        <!-- 动态填充 -->
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="downloadAll()">
+                            📦 下载全部
+                        </button>
+                        <button class="btn btn-secondary" onclick="startOver()">
+                            🔄 重新生成
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>标书工厂 v1.0 | 基于浏览器端智能生成 | 无需上传服务器</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
