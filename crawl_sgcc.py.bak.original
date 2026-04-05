@@ -56,35 +56,6 @@ def extract_keywords(title):
     found = [kw for kw in keywords if kw in title]
     return ', '.join(found)
 
-def parse_date(date_str):
-    """解析日期字符串，支持多种格式"""
-    if not date_str:
-        return ''
-    
-    date_str = date_str.strip()
-    
-    # 常见日期格式
-    formats = [
-        '%Y-%m-%d',      # 2024-01-15
-        '%Y/%m/%d',      # 2024/01/15
-        '%Y 年%m 月%d日',   # 2024 年 01 月 15 日
-        '%Y.%m.%d',      # 2024.01.15
-        '%m-%d',         # 01-15 (需要补全年份)
-        '%m/%d',         # 01/15
-    ]
-    
-    for fmt in formats:
-        try:
-            dt = datetime.strptime(date_str, fmt)
-            # 对于没有年份的格式，使用当前年份
-            if fmt in ['%m-%d', '%m/%d']:
-                dt = dt.replace(year=datetime.now().year)
-            return dt.strftime('%Y-%m-%d')
-        except ValueError:
-            continue
-    
-    return ''
-
 def crawl_list_page(page, list_config):
     """爬取单个列表页"""
     print(f"  正在爬取：{list_config['name']}")
@@ -95,7 +66,7 @@ def crawl_list_page(page, list_config):
         
         projects = []
         
-        # 查找所有项目链接 - 使用原始选择器
+        # 查找所有项目链接 - 使用更精确的选择器
         links = page.query_selector_all('a[href*="/doc/"]')
         
         seen_titles = set()
@@ -130,46 +101,21 @@ def crawl_list_page(page, list_config):
                 else:
                     full_url = f"{BASE_URL}/portal/#{href}"
                 
-                # 查找日期 - 使用 JavaScript 获取父元素文本
+                # 提取日期（从标题末尾或链接中）
                 publish_date = ''
-                import re
-                
-                try:
-                    # 使用 JavaScript 获取父元素的完整文本
-                    js_code = '''el => {
-                        let parent = el.parentElement;
-                        while (parent && parent.tagName !== "LI" && parent.tagName !== "DIV" && parent.tagName !== "UL") {
-                            parent = parent.parentElement;
-                        }
-                        return parent ? parent.innerText : "";
-                    }'''
-                    parent_text = link.evaluate(js_code)
-                    if parent_text:
-                        # 尝试从父元素文本中提取日期
-                        date_patterns = [
-                            r'(\d{4}-\d{2}-\d{2})',      # 2024-01-15
-                            r'(\d{4}/\d{2}/\d{2})',      # 2024/01/15
-                            r'(\d{4}年\d{2}月\d{2}日)',   # 2024 年 01 月 15 日
-                        ]
-                        for pattern in date_patterns:
-                            match = re.search(pattern, parent_text)
-                            if match:
-                                parsed = parse_date(match.group(1))
-                                if parsed:
-                                    publish_date = parsed
-                                    break
-                except Exception:
-                    pass
-                
-                # 清理标题 - 移除末尾的日期
                 date_parts = text.split()
                 if date_parts and len(date_parts[-1]) == 10 and date_parts[-1].count('-') == 2:
+                    publish_date = date_parts[-1]
                     text = ' '.join(date_parts[:-1]).strip()
+                
+                # 如果没有从标题提取到日期，使用今天
+                if not publish_date:
+                    publish_date = datetime.now().strftime('%Y-%m-%d')
                 
                 project = {
                     'title': text,
                     'link': full_url,
-                    'publish_date': publish_date if publish_date else '',  # 如果没有日期，保留空字符串
+                    'publish_date': publish_date,
                     'amount': '',
                     'region': extract_region(text),
                     'project_id': '',
@@ -222,8 +168,8 @@ def crawl_all(output_path):
             seen.add(p['title'])
             unique_projects.append(p)
     
-    # 按发布日期排序（最新的在前，空日期排最后）
-    unique_projects.sort(key=lambda x: x['publish_date'] if x['publish_date'] else '0000-00-00', reverse=True)
+    # 按发布日期排序（最新的在前）
+    unique_projects.sort(key=lambda x: x['publish_date'], reverse=True)
     
     # 构建输出数据
     output_data = {

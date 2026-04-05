@@ -22,7 +22,7 @@ LIST_PAGES = [
         'type': 'procurement'
     },
     {
-        'name': '中标(成交)结果公告',
+        'name': '中标 (成交) 结果公告',
         'url': 'https://sgccetp.com.cn/portal/#/list/list-com/2018032600289606_1_2018060501171111/old/1',
         'type': 'win'
     },
@@ -67,7 +67,7 @@ def parse_date(date_str):
     formats = [
         '%Y-%m-%d',      # 2024-01-15
         '%Y/%m/%d',      # 2024/01/15
-        '%Y 年%m 月%d日',   # 2024 年 01 月 15 日
+        '%Y年%m月%d日',   # 2024 年 01 月 15 日
         '%Y.%m.%d',      # 2024.01.15
         '%m-%d',         # 01-15 (需要补全年份)
         '%m/%d',         # 01/15
@@ -95,14 +95,58 @@ def crawl_list_page(page, list_config):
         
         projects = []
         
-        # 查找所有项目链接 - 使用原始选择器
-        links = page.query_selector_all('a[href*="/doc/"]')
+        # 查找所有项目列表项 - 使用更精确的选择器
+        # 国家电网 ECP 网站通常使用 ul > li 结构或 div 列表
+        list_items = page.query_selector_all('ul li, .list-item, .project-item, [class*="list"] > div')
         
         seen_titles = set()
-        for link in links:
+        for item in list_items:
             try:
-                href = link.get_attribute('href') or ''
-                text = (link.inner_text() or '').strip()
+                # 查找链接和日期
+                link_elem = item.query_selector('a[href*="/doc/"], a[href*="detail"]')
+                if not link_elem:
+                    continue
+                
+                href = link_elem.get_attribute('href') or ''
+                text = (link_elem.inner_text() or '').strip()
+                
+                # 查找日期元素 - 在列表项中查找日期
+                publish_date = ''
+                
+                # 尝试多种选择器查找日期
+                date_selectors = [
+                    '.date', '.time', '.publish-time', '.publish-date',
+                    '[class*="date"]', '[class*="time"]',
+                    'span:nth-last-child(1)', 'div:nth-last-child(1)',
+                    '.fr', '.right', '.meta'
+                ]
+                
+                for selector in date_selectors:
+                    date_elem = item.query_selector(selector)
+                    if date_elem:
+                        date_text = (date_elem.inner_text() or '').strip()
+                        parsed = parse_date(date_text)
+                        if parsed:
+                            publish_date = parsed
+                            break
+                
+                # 如果没找到日期元素，尝试从文本中解析
+                if not publish_date:
+                    item_text = (item.inner_text() or '').strip()
+                    # 尝试从整个项目文本中提取日期
+                    import re
+                    date_patterns = [
+                        r'(\d{4}-\d{2}-\d{2})',      # 2024-01-15
+                        r'(\d{4}/\d{2}/\d{2})',      # 2024/01/15
+                        r'(\d{4}年\d{2}月\d{2}日)',   # 2024 年 01 月 15 日
+                    ]
+                    for pattern in date_patterns:
+                        match = re.search(pattern, item_text)
+                        if match:
+                            parsed = parse_date(match.group(1))
+                            if parsed:
+                                publish_date = parsed
+                                break
                 
                 # 跳过空链接和重复项
                 if not href or not text or text in seen_titles:
@@ -129,37 +173,6 @@ def crawl_list_page(page, list_config):
                     full_url = href
                 else:
                     full_url = f"{BASE_URL}/portal/#{href}"
-                
-                # 查找日期 - 使用 JavaScript 获取父元素文本
-                publish_date = ''
-                import re
-                
-                try:
-                    # 使用 JavaScript 获取父元素的完整文本
-                    js_code = '''el => {
-                        let parent = el.parentElement;
-                        while (parent && parent.tagName !== "LI" && parent.tagName !== "DIV" && parent.tagName !== "UL") {
-                            parent = parent.parentElement;
-                        }
-                        return parent ? parent.innerText : "";
-                    }'''
-                    parent_text = link.evaluate(js_code)
-                    if parent_text:
-                        # 尝试从父元素文本中提取日期
-                        date_patterns = [
-                            r'(\d{4}-\d{2}-\d{2})',      # 2024-01-15
-                            r'(\d{4}/\d{2}/\d{2})',      # 2024/01/15
-                            r'(\d{4}年\d{2}月\d{2}日)',   # 2024 年 01 月 15 日
-                        ]
-                        for pattern in date_patterns:
-                            match = re.search(pattern, parent_text)
-                            if match:
-                                parsed = parse_date(match.group(1))
-                                if parsed:
-                                    publish_date = parsed
-                                    break
-                except Exception:
-                    pass
                 
                 # 清理标题 - 移除末尾的日期
                 date_parts = text.split()
