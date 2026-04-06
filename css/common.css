@@ -181,6 +181,8 @@ body {
   display: flex;
   gap: var(--spacing-3);
   flex-wrap: wrap;
+  /* 固定按钮顺序，防止点击后位置变化 */
+  justify-content: flex-end;
 }
 
 .nav-btn {
