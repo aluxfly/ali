@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试 checkBid 函数</title>
+</head>
+<body>
+    <h1>测试 checkBid 函数</h1>
+    <button onclick="testCheckBid()">测试 checkBid 是否存在</button>
+    <button onclick="checkBid()">直接调用 checkBid</button>
+    <div id="result"></div>
+    
+    <script src="app.js"></script>
+    <script>
+        function testCheckBid() {
+            const result = document.getElementById('result');
+            if (typeof checkBid === 'function') {
+                result.innerHTML = '<p style="color: green;">✅ checkBid 函数存在且可访问</p>';
+                result.innerHTML += '<p>函数定义位置：全局作用域</p>';
+                result.innerHTML += '<p>函数长度：" + checkBid.length + " 参数</p>';
+            } else {
+                result.innerHTML = '<p style="color: red;">❌ checkBid 函数未定义或不可访问</p>';
+                result.innerHTML += '<p>typeof checkBid: ' + typeof checkBid + '</p>';
+            }
+        }
+        
+        // 页面加载后自动测试
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成');
+            console.log('checkBid 类型:', typeof checkBid);
+        });
+    </script>
+</body>
+</html>
