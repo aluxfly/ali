@@ -1,0 +1,9 @@
+# 项目雷达 - Python 依赖
+# 用于 GitHub Actions 自动更新
+
+# Playwright - 浏览器自动化
+playwright>=1.40.0
+
+# 可选：其他可能需要的依赖
+# requests>=2.31.0
+# beautifulsoup4>=4.12.0

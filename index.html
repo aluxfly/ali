@@ -125,6 +125,92 @@
     .expand-arrow.expanded {
       transform: rotate(180deg);
     }
+    
+    /* 更新数据按钮样式 */
+    .nav-btn-update {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white !important;
+      border: none;
+      cursor: pointer;
+      font-weight: var(--font-medium);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      transition: all var(--transition-base);
+    }
+    
+    .nav-btn-update:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    
+    .nav-btn-update:active {
+      transform: translateY(0);
+    }
+    
+    .nav-btn-update.updating {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      cursor: wait;
+    }
+    
+    .nav-btn-update.updating .module-icon {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 更新提示 Toast */
+    .update-toast {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: var(--space-4) var(--space-5);
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-2xl);
+      border: 1px solid var(--slate-200);
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+      max-width: 400px;
+    }
+    
+    .update-toast.success {
+      border-left: 4px solid #10b981;
+    }
+    
+    .update-toast.error {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .update-toast.updating {
+      border-left: 4px solid #f59e0b;
+    }
+    
+    @keyframes slideInRight {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .update-toast-title {
+      font-weight: var(--font-bold);
+      color: var(--slate-800);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-base);
+    }
+    
+    .update-toast-message {
+      color: var(--slate-600);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -157,6 +243,9 @@
           <a href="bid_factory/index.html" class="nav-btn nav-btn-secondary nav-btn-bid">
             <span class="module-icon">📄</span>标书工厂
           </a>
+          <button onclick="updateData()" id="update-btn" class="nav-btn nav-btn-update" title="点击更新最新招标数据">
+            <span class="module-icon">🔄</span>更新数据
+          </button>
         </div>
       </div>
     </nav>
@@ -466,6 +555,193 @@
       document.getElementById('search-input').value = '';
       currentPage = 1;
       filterProjects();
+    }
+
+    // Show update toast notification
+    function showUpdateToast(type, title, message) {
+      // Remove existing toast
+      const existingToast = document.querySelector('.update-toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+      
+      const toast = document.createElement('div');
+      toast.className = `update-toast ${type}`;
+      toast.innerHTML = `
+        <div class="update-toast-title">${title}</div>
+        <div class="update-toast-message">${message}</div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 5 seconds (except for updating state)
+      if (type !== 'updating') {
+        setTimeout(() => {
+          toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+      
+      return toast;
+    }
+
+    // GitHub 配置（需要替换为实际值）
+    const GITHUB_CONFIG = {
+      owner: 'aluxfly',           // GitHub 用户名
+      repo: 'ali',                // 仓库名
+      workflowId: 'update-data.yml', // 工作流文件名
+      // Personal Access Token（需要在 GitHub 创建）
+      // 注意：生产环境不应将 token 硬编码在前端，应通过后端代理
+      token: '' // 留空则使用后端代理模式
+    };
+
+    // Update data function - GitHub Actions 模式
+    async function updateData() {
+      const updateBtn = document.getElementById('update-btn');
+      
+      // Prevent multiple clicks
+      if (updateBtn.classList.contains('updating')) {
+        return;
+      }
+      
+      // Set updating state
+      updateBtn.classList.add('updating');
+      updateBtn.disabled = true;
+      
+      // Show updating toast
+      const toast = showUpdateToast('updating', '🔄 正在更新数据', '正在触发 GitHub Actions 工作流...');
+      
+      try {
+        const startTime = Date.now();
+        
+        // 模式 1: 直接调用 GitHub API（需要 token）
+        if (GITHUB_CONFIG.token) {
+          await triggerGitHubWorkflowDirect();
+        } 
+        // 模式 2: 通过后端代理（推荐用于生产环境）
+        else {
+          await triggerGitHubWorkflowProxy();
+        }
+        
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        
+        // Update toast to success
+        toast.className = 'update-toast success';
+        toast.innerHTML = `
+          <div class="update-toast-title">✅ 更新任务已触发</div>
+          <div class="update-toast-message">
+            GitHub Actions 正在运行中...<br>
+            耗时：${duration}秒（触发）<br>
+            数据更新完成后页面将自动刷新<br>
+            <a href="https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/actions" target="_blank" 
+               style="color: var(--cosmic-600); text-decoration: underline;">查看运行状态 →</a>
+          </div>
+        `;
+        
+        // 轮询检查更新状态（最长 5 分钟）
+        pollUpdateStatus();
+        
+      } catch (err) {
+        console.error('更新数据失败:', err);
+        
+        // Update toast to error
+        toast.className = 'update-toast error';
+        toast.innerHTML = `
+          <div class="update-toast-title">❌ 触发失败</div>
+          <div class="update-toast-message">
+            ${err.message}<br>
+            请检查 GitHub 配置或联系管理员
+          </div>
+        `;
+      } finally {
+        // Reset button state
+        updateBtn.classList.remove('updating');
+        updateBtn.disabled = false;
+      }
+    }
+
+    // 直接调用 GitHub API 触发 workflow
+    async function triggerGitHubWorkflowDirect() {
+      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/actions/workflows/${GITHUB_CONFIG.workflowId}/dispatches`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${GITHUB_CONFIG.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            trigger_source: 'website-button'
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`GitHub API 错误：${error.message || response.statusText}`);
+      }
+      
+      console.log('✅ GitHub Actions 已触发');
+    }
+
+    // 通过后端代理触发 workflow（推荐）
+    async function triggerGitHubWorkflowProxy() {
+      const response = await fetch('/api/trigger-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          trigger_source: 'website-button'
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '触发失败');
+      }
+      
+      const result = await response.json();
+      console.log('✅ GitHub Actions 已触发:', result);
+    }
+
+    // 轮询检查数据更新状态
+    async function pollUpdateStatus(maxAttempts = 30, interval = 10000) {
+      let attempts = 0;
+      
+      const checkStatus = async () => {
+        attempts++;
+        
+        try {
+          const response = await fetch('data/projects.json?t=' + Date.now());
+          if (!response.ok) return;
+          
+          const data = await response.json();
+          const lastUpdated = new Date(data.last_updated || data.crawl_date);
+          const now = new Date();
+          
+          // 如果数据是在最近 5 分钟内更新的，刷新页面
+          if ((now - lastUpdated) < 5 * 60 * 1000) {
+            console.log('✅ 检测到数据已更新，刷新页面...');
+            setTimeout(() => location.reload(), 2000);
+            return;
+          }
+        } catch (err) {
+          console.error('检查状态失败:', err);
+        }
+        
+        // 继续轮询
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, interval);
+        } else {
+          console.log('⏱️ 轮询超时，请手动刷新页面');
+        }
+      };
+      
+      checkStatus();
     }
 
     // Populate region dropdown

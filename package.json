@@ -1,0 +1,20 @@
+{
+  "name": "project-radar",
+  "version": "1.0.0",
+  "description": "国家电网招标公告聚合平台 - 项目雷达",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "sgcc",
+    "crawler",
+    "project-radar"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

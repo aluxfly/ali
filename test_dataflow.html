@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据闭环功能测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">🔗 项目雷达数据闭环 - 功能测试</h1>
+        
+        <!-- 测试用例 1: 模拟项目卡片 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试用例 1: 模拟项目数据</h2>
+            <div class="space-y-2 text-sm">
+                <div><strong>项目名称:</strong> <span id="test-project-name">国网浙江省电力公司 2024 年智能电表采购项目</span></div>
+                <div><strong>招标人:</strong> <span id="test-tenderer">国网浙江省电力公司</span></div>
+                <div><strong>预算金额:</strong> <span id="test-budget">2500 万元</span></div>
+                <div><strong>地区:</strong> <span id="test-region">华东</span></div>
+                <div><strong>原文链接:</strong> <span id="test-link">http://example.com/bid/123</span></div>
+            </div>
+            
+            <div class="mt-4 flex gap-3">
+                <a id="btn-bid-factory" href="#" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                    📄 跳转到标书工厂
+                </a>
+                <a id="btn-win-prediction" href="#" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                    📊 跳转到中标预测
+                </a>
+            </div>
+        </div>
+        
+        <!-- 测试用例 2: URL 参数解析测试 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试用例 2: URL 参数解析测试</h2>
+            <div class="space-y-3">
+                <button onclick="testBidFactoryParams()" class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md font-medium">
+                    测试标书工厂 URL 参数
+                </button>
+                <button onclick="testWinPredictionParams()" class="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-md font-medium">
+                    测试中标预测 URL 参数
+                </button>
+                <div id="url-test-result" class="mt-4 p-4 bg-gray-50 rounded-md font-mono text-sm hidden"></div>
+            </div>
+        </div>
+        
+        <!-- 测试用例 3: 直接链接测试 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">测试用例 3: 直接带参数访问</h2>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                    <a href="bid_factory/index.html?projectName=测试项目&tenderer=测试单位&budget=1000 万元&link=http://test.com" target="_blank" class="text-blue-600 hover:underline">
+                        直接访问标书工厂（带参数）
+                    </a>
+                    <span class="text-gray-400">→</span>
+                    <span class="text-xs text-gray-500">在新标签页打开</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="win_prediction.html?projectName=测试项目&budget=1000&tenderUnit=测试单位&region=华东" target="_blank" class="text-green-600 hover:underline">
+                        直接访问中标预测（带参数）
+                    </a>
+                    <span class="text-gray-400">→</span>
+                    <span class="text-xs text-gray-500">在新标签页打开</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试结果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">✅ 测试清单</h2>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-0.5">□</span>
+                    <span>点击"跳转到标书工厂"按钮，确认正确跳转并显示提示信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-0.5">□</span>
+                    <span>确认标书工厂输入框已填充项目基本信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-0.5">□</span>
+                    <span>点击"跳转到中标预测"按钮，确认正确跳转并显示提示信息</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-0.5">□</span>
+                    <span>确认中标预测表单已自动填充并显示预测结果</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="text-gray-400 mt-0.5">□</span>
+                    <span>测试直接带参数访问两个页面</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 测试项目数据
+        const testData = {
+            projectName: '国网浙江省电力公司 2024 年智能电表采购项目',
+            tenderer: '国网浙江省电力公司',
+            budget: '2500 万元',
+            region: '华东',
+            link: 'http://example.com/bid/123'
+        };
+
+        // 生成 URL
+        function generateBidFactoryUrl() {
+            return `bid_factory/index.html?projectName=${encodeURIComponent(testData.projectName)}&tenderer=${encodeURIComponent(testData.tenderer)}&budget=${encodeURIComponent(testData.budget)}&link=${encodeURIComponent(testData.link)}`;
+        }
+
+        function generateWinPredictionUrl() {
+            return `win_prediction.html?projectName=${encodeURIComponent(testData.projectName)}&budget=${encodeURIComponent(testData.budget.replace(/[^0-9.]/g, ''))}&tenderUnit=${encodeURIComponent(testData.tenderer)}&region=${encodeURIComponent(testData.region)}`;
+        }
+
+        // 设置按钮链接
+        document.getElementById('btn-bid-factory').href = generateBidFactoryUrl();
+        document.getElementById('btn-win-prediction').href = generateWinPredictionUrl();
+
+        // 测试 URL 参数解析
+        function testBidFactoryParams() {
+            const url = generateBidFactoryUrl();
+            const params = new URLSearchParams(url.split('?')[1]);
+            
+            const result = {
+                'projectName': params.get('projectName'),
+                'tenderer': params.get('tenderer'),
+                'budget': params.get('budget'),
+                'link': params.get('link')
+            };
+            
+            showResult('标书工厂 URL 参数解析结果:', result);
+        }
+
+        function testWinPredictionParams() {
+            const url = generateWinPredictionUrl();
+            const params = new URLSearchParams(url.split('?')[1]);
+            
+            const result = {
+                'projectName': params.get('projectName'),
+                'budget': params.get('budget'),
+                'tenderUnit': params.get('tenderUnit'),
+                'region': params.get('region')
+            };
+            
+            showResult('中标预测 URL 参数解析结果:', result);
+        }
+
+        function showResult(title, data) {
+            const resultDiv = document.getElementById('url-test-result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `<strong>${title}</strong><pre class="mt-2">${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        // 页面加载时显示当前 URL 参数（如果有）
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.toString()) {
+                const resultDiv = document.getElementById('url-test-result');
+                resultDiv.classList.remove('hidden');
+                
+                const resultData = {};
+                params.forEach((value, key) => {
+                    resultData[key] = value;
+                });
+                
+                resultDiv.innerHTML = `<strong>当前页面 URL 参数:</strong><pre class="mt-2">${JSON.stringify(resultData, null, 2)}</pre>`;
+            }
+        });
+    </script>
+</body>
+</html>
