@@ -1211,7 +1211,95 @@ function showStep(stepNumber) {
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     console.log('标书工厂 Web 版已加载');
+    
+    // 检查 URL 参数，支持从项目雷达跳转
+    parseUrlParams();
 });
+
+/**
+ * 解析 URL 参数并自动填充项目信息
+ */
+function parseUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const projectName = params.get('projectName');
+    const tenderer = params.get('tenderer');
+    const budget = params.get('budget');
+    const link = params.get('link');
+    
+    if (projectName) {
+        console.log('从 URL 参数加载项目信息:', { projectName, tenderer, budget, link });
+        
+        // 构建公告文本模板
+        let announcementText = `【项目信息】\n`;
+        announcementText += `项目名称：${projectName}\n`;
+        
+        if (tenderer) {
+            announcementText += `招标人：${tenderer}\n`;
+        }
+        
+        if (budget) {
+            announcementText += `预算金额：${budget}\n`;
+        }
+        
+        announcementText += `\n【技术要求】\n（请根据实际招标文件补充）\n`;
+        announcementText += `\n【资质要求】\n（请根据实际招标文件补充）\n`;
+        
+        if (link) {
+            announcementText += `\n【原文链接】\n${link}\n`;
+            // 尝试自动抓取公告全文
+            fetchAnnouncementContent(link);
+        }
+        
+        // 填充到输入框
+        const inputElement = document.getElementById('announcementInput');
+        if (inputElement) {
+            inputElement.value = announcementText;
+        }
+        
+        // 提示用户
+        setTimeout(() => {
+            alert('📋 已从项目雷达导入项目信息！\n\n请补充完整的招标公告内容后点击"解析公告信息"按钮。');
+        }, 500);
+    }
+}
+
+/**
+ * 尝试从链接抓取公告全文（需要后端支持或使用 CORS 代理）
+ */
+async function fetchAnnouncementContent(url) {
+    if (!url) return;
+    
+    console.log('尝试抓取公告全文:', url);
+    
+    try {
+        // 注意：由于浏览器 CORS 限制，直接 fetch 可能失败
+        // 在生产环境中，应该通过后端代理或使用浏览器扩展
+        // 这里提供一个示例实现
+        
+        // 方法 1: 直接 fetch（仅当目标网站允许 CORS 时有效）
+        // const response = await fetch(url);
+        // const html = await response.text();
+        
+        // 方法 2: 使用 CORS 代理（示例，实际需配置自己的代理）
+        // const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
+        // const response = await fetch(proxyUrl);
+        // const html = await response.text();
+        
+        // 方法 3: 提示用户手动复制
+        console.log('由于浏览器安全限制，无法直接抓取外部网页内容。');
+        console.log('请用户手动复制招标公告内容并粘贴到输入框。');
+        
+        // 在输入框中添加提示
+        const inputElement = document.getElementById('announcementInput');
+        if (inputElement) {
+            const currentText = inputElement.value;
+            inputElement.value = currentText + `\n\n💡 提示：请点击上方"查看原文"链接，复制完整的招标公告内容粘贴到这里。`;
+        }
+        
+    } catch (error) {
+        console.error('抓取公告全文失败:', error);
+    }
+}
 
 /**
  * 标书完整度检查

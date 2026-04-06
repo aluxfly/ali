@@ -471,7 +471,66 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       // Charts will be initialized on first prediction
+      
+      // 检查 URL 参数，支持从项目雷达跳转
+      parseUrlParams();
     });
+
+    /**
+     * 解析 URL 参数并自动填充表单
+     */
+    function parseUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const projectName = params.get('projectName');
+      const budget = params.get('budget');
+      const tenderUnit = params.get('tenderUnit');
+      const region = params.get('region');
+      
+      if (projectName || budget || tenderUnit || region) {
+        console.log('从 URL 参数加载项目信息:', { projectName, budget, tenderUnit, region });
+        
+        // 填充表单
+        if (projectName) {
+          document.getElementById('project-name').value = projectName;
+        }
+        
+        if (budget) {
+          // 提取数字部分
+          const budgetNum = budget.replace(/[^0-9.]/g, '');
+          if (budgetNum) {
+            document.getElementById('budget-amount').value = budgetNum;
+          }
+        }
+        
+        if (tenderUnit) {
+          document.getElementById('tender-unit').value = tenderUnit;
+        }
+        
+        if (region) {
+          // 尝试匹配地区
+          const regionSelect = document.getElementById('project-region');
+          for (let i = 0; i < regionSelect.options.length; i++) {
+            if (regionSelect.options[i].value === region || 
+                regionSelect.options[i].text.includes(region)) {
+              regionSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+        
+        // 提示用户
+        setTimeout(() => {
+          alert('📊 已从项目雷达导入项目信息！\n\n请补充完整信息后点击"开始预测"按钮。');
+        }, 500);
+        
+        // 自动开始预测（如果关键信息已填写）
+        if (projectName && budget) {
+          setTimeout(() => {
+            predictWin();
+          }, 1000);
+        }
+      }
+    }
   </script>
 </body>
 </html>
