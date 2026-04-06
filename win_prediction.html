@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中标预测 - 项目雷达</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .nav-btn { padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+    .nav-btn-primary { background: #5465ff; color: white; }
+    .nav-btn-primary:hover { background: #4354e6; }
+    .nav-btn-secondary { color: #6b7280; background: transparent; }
+    .nav-btn-secondary:hover { background: #f3f4f6; color: #374151; }
+    .prediction-card { transition: all 0.3s ease; }
+    .prediction-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .probability-high { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .probability-medium { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .probability-low { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    @media (max-width: 640px) {
+      .nav-buttons { flex-direction: column; gap: 8px !important; align-items: flex-start !important; }
+      .nav-btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-6xl">
+    <!-- Header -->
+    <header class="mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">🎯 中标预测</h1>
+          <p class="text-gray-600">基于历史数据的智能中标概率分析</p>
+        </div>
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons flex items-center gap-3">
+          <a href="index.html" class="nav-btn nav-btn-secondary">项目雷达</a>
+          <a href="bid_factory/index.html" class="nav-btn nav-btn-secondary">标书工厂</a>
+          <a href="#" class="nav-btn nav-btn-primary">中标预测</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Input Form -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">📋 项目信息输入</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">项目名称</label>
+          <input type="text" id="project-name" placeholder="请输入项目名称" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">预算金额（万元）</label>
+          <input type="number" id="budget-amount" placeholder="例如：500" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">招标单位</label>
+          <input type="text" id="tender-unit" placeholder="请输入招标单位" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">项目类型</label>
+          <select id="project-type" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">请选择类型</option>
+            <option value="construction">工程施工</option>
+            <option value="equipment">设备采购</option>
+            <option value="service">服务类</option>
+            <option value="design">设计咨询</option>
+            <option value="material">材料采购</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">所在地区</label>
+          <select id="project-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">请选择地区</option>
+            <option value="华北">华北</option>
+            <option value="华东">华东</option>
+            <option value="华南">华南</option>
+            <option value="华中">华中</option>
+            <option value="西南">西南</option>
+            <option value="西北">西北</option>
+            <option value="东北">东北</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">企业资质等级</label>
+          <select id="qualification" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">请选择资质</option>
+            <option value="A">甲级/一级</option>
+            <option value="B">乙级/二级</option>
+            <option value="C">丙级/三级</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-6 flex gap-3">
+        <button onclick="predictWin()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors">
+          🔮 开始预测
+        </button>
+        <button onclick="clearForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-2 rounded-lg transition-colors">
+          清空表单
+        </button>
+      </div>
+    </div>
+
+    <!-- Prediction Result -->
+    <div id="prediction-result" class="hidden">
+      <!-- Probability Card -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">📊 中标概率预测</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="flex items-center justify-center">
+            <div id="probability-gauge" class="relative w-48 h-48">
+              <canvas id="probabilityChart"></canvas>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-center">
+                  <div id="probability-value" class="text-4xl font-bold text-gray-800">0%</div>
+                  <div class="text-sm text-gray-500">中标概率</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col justify-center">
+            <div id="probability-level" class="probability-high text-white rounded-lg p-6 mb-4 text-center">
+              <div class="text-2xl font-bold" id="level-text">高概率</div>
+              <div class="text-sm mt-1" id="level-desc">建议积极参与投标</div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <span class="text-gray-600">综合评分</span>
+                <span id="score-value" class="font-semibold text-gray-800">0</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <span class="text-gray-600">竞争对手数量</span>
+                <span id="competitor-count" class="font-semibold text-gray-800">0</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <span class="text-gray-600">历史中标率</span>
+                <span id="history-rate" class="font-semibold text-gray-800">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategy & Analysis -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Bid Strategy -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">💡 推荐投标策略</h2>
+          <div id="strategy-list" class="space-y-3">
+            <!-- Strategy items will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Competitor Analysis -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">🏢 竞争对手分析</h2>
+          <div id="competitor-list" class="space-y-3">
+            <!-- Competitor items will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Trend -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">📈 历史中标趋势</h2>
+        <div class="h-64">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Key Factors -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">🔑 关键影响因素</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="factors-grid">
+          <!-- Factors will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="text-center py-12">
+      <div class="text-6xl mb-4">🎯</div>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">请输入项目信息</h3>
+      <p class="text-gray-500">填写上方表单后点击"开始预测"按钮</p>
+    </div>
+  </div>
+
+  <script>
+    let probabilityChart = null;
+    let trendChart = null;
+
+    // Sample historical data (in production, this would come from backend)
+    const historicalData = {
+      winRates: [45, 52, 48, 55, 60, 58, 62, 65],
+      months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月']
+    };
+
+    // Prediction logic (simplified rule-based engine)
+    function calculatePrediction(formData) {
+      let score = 50; // Base score
+      const factors = [];
+
+      // Budget factor
+      const budget = parseFloat(formData.budget) || 0;
+      if (budget > 0) {
+        if (budget < 100) {
+          score += 15;
+          factors.push({ name: '预算规模', value: '+15', impact: 'positive', desc: '小额项目竞争较少' });
+        } else if (budget < 500) {
+          score += 10;
+          factors.push({ name: '预算规模', value: '+10', impact: 'positive', desc: '中等预算，适中竞争' });
+        } else if (budget < 1000) {
+          score += 5;
+          factors.push({ name: '预算规模', value: '+5', impact: 'neutral', desc: '较大预算，竞争激烈' });
+        } else {
+          score -= 5;
+          factors.push({ name: '预算规模', value: '-5', impact: 'negative', desc: '大额项目，强竞争' });
+        }
+      }
+
+      // Qualification factor
+      if (formData.qualification === 'A') {
+        score += 20;
+        factors.push({ name: '企业资质', value: '+20', impact: 'positive', desc: '甲级资质优势明显' });
+      } else if (formData.qualification === 'B') {
+        score += 10;
+        factors.push({ name: '企业资质', value: '+10', impact: 'positive', desc: '乙级资质有竞争力' });
+      } else if (formData.qualification === 'C') {
+        score += 0;
+        factors.push({ name: '企业资质', value: '0', impact: 'neutral', desc: '丙级资质需加强' });
+      }
+
+      // Region factor (simplified)
+      if (formData.region) {
+        score += 5;
+        factors.push({ name: '地区匹配', value: '+5', impact: 'positive', desc: '地区经验丰富' });
+      }
+
+      // Project type factor
+      if (formData.type) {
+        score += 8;
+        factors.push({ name: '类型匹配', value: '+8', impact: 'positive', desc: '专业领域对口' });
+      }
+
+      // Normalize score to 0-100
+      score = Math.max(0, Math.min(100, score));
+
+      // Calculate competitors based on budget
+      const competitors = budget > 1000 ? 15 : budget > 500 ? 10 : budget > 100 ? 6 : 3;
+
+      // Historical win rate
+      const historyRate = Math.round(45 + (score - 50) * 0.5);
+
+      return {
+        probability: score,
+        competitors: competitors,
+        historyRate: historyRate,
+        factors: factors,
+        level: score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low'
+      };
+    }
+
+    // Generate strategies based on prediction
+    function generateStrategies(prediction) {
+      const strategies = [];
+      
+      if (prediction.level === 'high') {
+        strategies.push({ icon: '✅', text: '重点投入资源，组建专业投标团队' });
+        strategies.push({ icon: '💰', text: '报价可适度提高，保证利润空间' });
+        strategies.push({ icon: '📋', text: '准备充分的技术方案和商务文件' });
+      } else if (prediction.level === 'medium') {
+        strategies.push({ icon: '⚖️', text: '合理控制报价，平衡中标率与利润' });
+        strategies.push({ icon: '🔍', text: '深入研究招标文件，突出自身优势' });
+        strategies.push({ icon: '🤝', text: '考虑与互补企业组成联合体' });
+      } else {
+        strategies.push({ icon: '⚠️', text: '谨慎评估投入产出比' });
+        strategies.push({ icon: '📊', text: '分析竞争对手，寻找差异化优势' });
+        strategies.push({ icon: '🎯', text: '聚焦小型项目，积累中标业绩' });
+      }
+
+      return strategies;
+    }
+
+    // Generate competitor analysis
+    function generateCompetitors(prediction) {
+      const competitorTypes = [
+        { name: '国有企业', strength: '高', probability: '35%' },
+        { name: '大型民企', strength: '中高', probability: '28%' },
+        { name: '本地企业', strength: '中', probability: '22%' },
+        { name: '其他', strength: '低', probability: '15%' }
+      ];
+      return competitorTypes;
+    }
+
+    // Render prediction results
+    function renderPrediction(prediction, formData) {
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('prediction-result').classList.remove('hidden');
+
+      // Update probability value
+      document.getElementById('probability-value').textContent = prediction.probability + '%';
+      document.getElementById('score-value').textContent = prediction.probability;
+      document.getElementById('competitor-count').textContent = prediction.competitors + '家';
+      document.getElementById('history-rate').textContent = prediction.historyRate + '%';
+
+      // Update probability level card
+      const levelCard = document.getElementById('probability-level');
+      const levelText = document.getElementById('level-text');
+      const levelDesc = document.getElementById('level-desc');
+      
+      levelCard.className = 'rounded-lg p-6 mb-4 text-center ' + 
+        (prediction.level === 'high' ? 'probability-high' : 
+         prediction.level === 'medium' ? 'probability-medium' : 'probability-low');
+      
+      if (prediction.level === 'high') {
+        levelText.textContent = '高概率';
+        levelDesc.textContent = '建议积极参与投标';
+      } else if (prediction.level === 'medium') {
+        levelText.textContent = '中等概率';
+        levelDesc.textContent = '需要优化投标策略';
+      } else {
+        levelText.textContent = '低概率';
+        levelDesc.textContent = '建议谨慎评估';
+      }
+
+      // Render strategies
+      const strategies = generateStrategies(prediction);
+      document.getElementById('strategy-list').innerHTML = strategies.map(s => 
+        `<div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+          <span class="text-xl">${s.icon}</span>
+          <span class="text-gray-700">${s.text}</span>
+        </div>`
+      ).join('');
+
+      // Render competitors
+      const competitors = generateCompetitors(prediction);
+      document.getElementById('competitor-list').innerHTML = competitors.map(c => 
+        `<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div>
+            <div class="font-medium text-gray-800">${c.name}</div>
+            <div class="text-sm text-gray-500">实力：${c.strength}</div>
+          </div>
+          <div class="text-blue-600 font-semibold">${c.probability}</div>
+        </div>`
+      ).join('');
+
+      // Render factors
+      document.getElementById('factors-grid').innerHTML = prediction.factors.map(f => 
+        `<div class="p-4 rounded-lg ${f.impact === 'positive' ? 'bg-green-50' : f.impact === 'negative' ? 'bg-red-50' : 'bg-gray-50'}">
+          <div class="text-sm text-gray-600">${f.name}</div>
+          <div class="text-xl font-bold ${f.impact === 'positive' ? 'text-green-600' : f.impact === 'negative' ? 'text-red-600' : 'text-gray-600'}">${f.value}</div>
+          <div class="text-xs text-gray-500 mt-1">${f.desc}</div>
+        </div>`
+      ).join('');
+
+      // Update charts
+      updateProbabilityChart(prediction.probability);
+      updateTrendChart();
+    }
+
+    // Update probability gauge chart
+    function updateProbabilityChart(probability) {
+      const ctx = document.getElementById('probabilityChart').getContext('2d');
+      
+      if (probabilityChart) {
+        probabilityChart.destroy();
+      }
+
+      const color = probability >= 70 ? '#10b981' : probability >= 40 ? '#f59e0b' : '#ef4444';
+
+      probabilityChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['中标概率', '未中标概率'],
+          datasets: [{
+            data: [probability, 100 - probability],
+            backgroundColor: [color, '#e5e7eb'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          cutout: '75%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
+        }
+      });
+    }
+
+    // Update trend chart
+    function updateTrendChart() {
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      
+      if (trendChart) {
+        trendChart.destroy();
+      }
+
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: historicalData.months,
+          datasets: [{
+            label: '历史中标率 (%)',
+            data: historicalData.winRates,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              min: 30,
+              max: 80
+            }
+          }
+        }
+      });
+    }
+
+    // Main prediction function
+    function predictWin() {
+      const formData = {
+        name: document.getElementById('project-name').value,
+        budget: document.getElementById('budget-amount').value,
+        tenderUnit: document.getElementById('tender-unit').value,
+        type: document.getElementById('project-type').value,
+        region: document.getElementById('project-region').value,
+        qualification: document.getElementById('qualification').value
+      };
+
+      // Validate
+      if (!formData.name || !formData.budget) {
+        alert('请至少填写项目名称和预算金额');
+        return;
+      }
+
+      // Calculate prediction
+      const prediction = calculatePrediction(formData);
+      
+      // Render results
+      renderPrediction(prediction, formData);
+      
+      // Scroll to results
+      document.getElementById('prediction-result').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Clear form
+    function clearForm() {
+      document.getElementById('project-name').value = '';
+      document.getElementById('budget-amount').value = '';
+      document.getElementById('tender-unit').value = '';
+      document.getElementById('project-type').value = '';
+      document.getElementById('project-region').value = '';
+      document.getElementById('qualification').value = '';
+      
+      document.getElementById('prediction-result').classList.add('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      // Charts will be initialized on first prediction
+    });
+  </script>
+</body>
+</html>
