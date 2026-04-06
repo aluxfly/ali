@@ -10,7 +10,7 @@ on:
         default: 'manual'
         type: string
   
-  # 定时触发（每天 8:00 UTC，即北京时间 16:00）
+  # 定时触发（每天 00:00 UTC，即北京时间 08:00）
   schedule:
     - cron: '0 0 * * *'
 
