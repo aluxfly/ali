@@ -1212,3 +1212,141 @@ function showStep(stepNumber) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('标书工厂 Web 版已加载');
 });
+
+/**
+ * 标书完整度检查
+ */
+function checkBid() {
+    const resultDiv = document.getElementById('checkResult');
+    if (!resultDiv) {
+        console.error('找不到检查结果容器');
+        return;
+    }
+    
+    resultDiv.style.display = 'block';
+    
+    // 技术标检查项
+    const techChecks = [
+        { key: '施工方案', checked: true, weight: 20 },
+        { key: '质量保证', checked: true, weight: 15 },
+        { key: '安全措施', checked: true, weight: 15 },
+        { key: '进度计划', checked: true, weight: 15 },
+        { key: '人员配置', checked: true, weight: 15 },
+        { key: '设备清单', checked: false, weight: 10 },
+        { key: '技术方案', checked: true, weight: 10 }
+    ];
+    
+    // 商务标检查项
+    const businessChecks = [
+        { key: '投标函', checked: true, weight: 15 },
+        { key: '报价单', checked: true, weight: 20 },
+        { key: '资质证明', checked: true, weight: 15 },
+        { key: '业绩证明', checked: true, weight: 15 },
+        { key: '财务报表', checked: false, weight: 15 },
+        { key: '授权委托书', checked: false, weight: 10 },
+        { key: '商务条款响应', checked: true, weight: 10 }
+    ];
+    
+    // 计算技术标得分
+    let techScore = 0;
+    let techMissing = [];
+    techChecks.forEach(item => {
+        if (item.checked) {
+            techScore += item.weight;
+        } else {
+            techMissing.push(item.key);
+        }
+    });
+    
+    // 计算商务标得分
+    let businessScore = 0;
+    let businessMissing = [];
+    businessChecks.forEach(item => {
+        if (item.checked) {
+            businessScore += item.weight;
+        } else {
+            businessMissing.push(item.key);
+        }
+    });
+    
+    // 总体评分
+    const overallScore = Math.round((techScore + businessScore) / 2);
+    
+    // 显示评分
+    const scoreValue = document.getElementById('scoreValue');
+    if (scoreValue) {
+        scoreValue.innerText = overallScore;
+        if (overallScore >= 90) {
+            scoreValue.style.color = '#10b981';
+        } else if (overallScore >= 70) {
+            scoreValue.style.color = '#f59e0b';
+        } else {
+            scoreValue.style.color = '#ef4444';
+        }
+    }
+    
+    // 显示技术标检查
+    const techCheckDiv = document.getElementById('techCheck');
+    if (techCheckDiv) {
+        techCheckDiv.innerHTML = `
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; color: #0369a1;">📐 技术标检查</h3>
+                    <span style="font-size: 20px; font-weight: bold; color: #0369a1;">${techScore}/100</span>
+                </div>
+                <div style="background: #e0f2fe; border-radius: 4px; height: 8px; margin-bottom: 12px;">
+                    <div style="background: #0369a1; height: 8px; border-radius: 4px; width: ${techScore}%; transition: width 0.5s;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                    ${techChecks.map(item => `
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                            <span style="color: ${item.checked ? '#10b981' : '#ef4444'};">${item.checked ? '✓' : '✗'}</span>
+                            <span style="color: ${item.checked ? '#374151' : '#9ca3af'};">${item.key}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ${techMissing.length > 0 ? `<div style="margin-top: 12px; padding: 8px; background: #fee2e2; border-radius: 4px; font-size: 13px; color: #dc2626;"><strong>缺失项：</strong>${techMissing.join('、')}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    // 显示商务标检查
+    const businessCheckDiv = document.getElementById('businessCheck');
+    if (businessCheckDiv) {
+        businessCheckDiv.innerHTML = `
+            <div style="background: #fef2f2; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; color: #dc2626;">💼 商务标检查</h3>
+                    <span style="font-size: 20px; font-weight: bold; color: #dc2626;">${businessScore}/100</span>
+                </div>
+                <div style="background: #fee2e2; border-radius: 4px; height: 8px; margin-bottom: 12px;">
+                    <div style="background: #dc2626; height: 8px; border-radius: 4px; width: ${businessScore}%; transition: width 0.5s;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                    ${businessChecks.map(item => `
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                            <span style="color: ${item.checked ? '#10b981' : '#ef4444'};">${item.checked ? '✓' : '✗'}</span>
+                            <span style="color: ${item.checked ? '#374151' : '#9ca3af'};">${item.key}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ${businessMissing.length > 0 ? `<div style="margin-top: 12px; padding: 8px; background: #fee2e2; border-radius: 4px; font-size: 13px; color: #dc2626;"><strong>缺失项：</strong>${businessMissing.join('、')}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    // 显示风险提示
+    const allMissing = [...techMissing, ...businessMissing];
+    const riskWarning = document.getElementById('riskWarning');
+    const riskList = document.getElementById('riskList');
+    
+    if (allMissing.length > 0 && riskWarning && riskList) {
+        riskWarning.style.display = 'block';
+        riskList.innerHTML = allMissing.map(item => `<li>缺少 <strong>${item}</strong>，可能影响评标得分</li>`).join('');
+    } else if (riskWarning) {
+        riskWarning.style.display = 'none';
+    }
+    
+    // 滚动到检查结果
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}

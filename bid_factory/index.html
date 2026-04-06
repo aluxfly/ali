@@ -147,6 +147,34 @@
                             🔄 重新生成
                         </button>
                     </div>
+                    <div class="btn-group" style="margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="checkBid()" style="background: #10b981;">
+                            📋 标书检查
+                        </button>
+                    </div>
+                    <!-- 标书检查结果区域 -->
+                    <div id="checkResult" style="display: none; margin-top: 24px;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #10b981;">✓</span>
+                            <h2>标书完整度检查</h2>
+                        </div>
+                        <div class="step-content">
+                            <!-- 总体评分 -->
+                            <div id="overallScore" style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="font-size: 48px; font-weight: bold; color: #10b981;" id="scoreValue">--</div>
+                                <div style="color: #6b7280;">完整度评分</div>
+                            </div>
+                            <!-- 技术标检查 -->
+                            <div id="techCheck" style="margin-bottom: 20px;"></div>
+                            <!-- 商务标检查 -->
+                            <div id="businessCheck" style="margin-bottom: 20px;"></div>
+                            <!-- 风险提示 -->
+                            <div id="riskWarning" style="padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
+                                <strong style="color: #92400e;">⚠️ 风险提示</strong>
+                                <ul id="riskList" style="margin: 8px 0 0 20px; color: #92400e;"></ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
