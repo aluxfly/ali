@@ -4,136 +4,429 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>项目雷达 - 国家电网招标公告</title>
+  <link rel="stylesheet" href="css/design-system.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .project-card { transition: all 0.2s ease; }
-    .project-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    .detail-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 6px 0; }
-    .detail-label { font-weight: 600; color: #6b7280; }
+    /* 页面特定样式 */
+    .project-card {
+      transition: all var(--transition-slow);
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    .project-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-2xl);
+    }
+    
+    .project-card.expanded {
+      border-color: var(--cosmic-300);
+    }
+    
+    .detail-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      font-size: var(--text-sm);
+    }
+    
+    .detail-label {
+      font-weight: var(--font-semibold);
+      color: var(--slate-500);
+    }
+    
+    .pagination-btn {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--slate-300);
+      background: white;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--slate-600);
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--cosmic-50);
+      border-color: var(--cosmic-400);
+      color: var(--cosmic-700);
+      transform: translateY(-1px);
+    }
+    
+    .pagination-btn.active {
+      background: var(--gradient-primary);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(59, 69, 232, 0.4);
+    }
+    
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .module-icon {
+      font-size: 18px;
+    }
+    
+    /* 筛选区增强 */
+    .filter-section {
+      background: linear-gradient(180deg, var(--slate-50) 0%, white 100%);
+      border: 1px solid var(--slate-200);
+    }
+    
+    /* 项目卡片展开动画 */
+    .project-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-slow), opacity var(--transition-base);
+      opacity: 0;
+    }
+    
+    .project-detail.expanded {
+      max-height: 1000px;
+      opacity: 1;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-20);
+      background: var(--slate-50);
+      border-radius: var(--radius-2xl);
+      border: 2px dashed var(--slate-300);
+    }
+    
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: var(--space-4);
+      opacity: 0.5;
+    }
+    
+    /* 加载骨架屏 */
+    .skeleton {
+      background: linear-gradient(90deg, var(--slate-100) 25%, var(--slate-200) 50%, var(--slate-100) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+    
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    /* 展开箭头动画 */
+    .expand-arrow {
+      transition: transform var(--transition-base);
+    }
+    
+    .expand-arrow.expanded {
+      transform: rotate(180deg);
+    }
+    
+    /* 更新数据按钮样式 */
+    .nav-btn-update {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white !important;
+      border: none;
+      cursor: pointer;
+      font-weight: var(--font-medium);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+      transition: all var(--transition-base);
+    }
+    
+    .nav-btn-update:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    
+    .nav-btn-update:active {
+      transform: translateY(0);
+    }
+    
+    .nav-btn-update.updating {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      cursor: wait;
+    }
+    
+    .nav-btn-update.updating .module-icon {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 更新提示 Toast */
+    .update-toast {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: var(--space-4) var(--space-5);
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-2xl);
+      border: 1px solid var(--slate-200);
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+      max-width: 400px;
+    }
+    
+    .update-toast.success {
+      border-left: 4px solid #10b981;
+    }
+    
+    .update-toast.error {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .update-toast.updating {
+      border-left: 4px solid #f59e0b;
+    }
+    
+    @keyframes slideInRight {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .update-toast-title {
+      font-weight: var(--font-bold);
+      color: var(--slate-800);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-base);
+    }
+    
+    .update-toast-message {
+      color: var(--slate-600);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="container mx-auto px-4 py-6 max-w-6xl">
-    <!-- Header -->
-    <header class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">📡 项目雷达</h1>
-      <p class="text-gray-600">国家电网招标公告聚合平台</p>
-      <div class="mt-4 flex items-center gap-4 text-sm text-gray-500">
-        <span id="stats-total">共 0 个项目</span>
-        <span id="stats-date">数据更新于：--</span>
+<body>
+  <!-- 背景装饰 -->
+  <div class="body-bg"></div>
+  
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 统一导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-content">
+        <div class="navbar-brand">
+          <div class="navbar-logo">📡</div>
+          <div class="navbar-title">
+            <h1>项目雷达</h1>
+            <p>国家电网招标公告聚合平台</p>
+            <div class="navbar-stats">
+              <span id="stats-total">📊 共 0 个项目</span>
+              <span id="stats-date">🕐 更新于：--</span>
+            </div>
+          </div>
+        </div>
+        <!-- 导航按钮 -->
+        <div class="navbar-nav">
+          <a href="#" class="nav-btn nav-btn-active nav-btn-radar">
+            <span class="module-icon">📡</span>项目搜索
+          </a>
+          <a href="win_prediction.html" class="nav-btn nav-btn-secondary nav-btn-prediction">
+            <span class="module-icon">🎯</span>中标预测
+          </a>
+          <a href="bid_factory/index.html" class="nav-btn nav-btn-secondary nav-btn-bid">
+            <span class="module-icon">📄</span>标书工厂
+          </a>
+          <button onclick="updateData()" id="update-btn" class="nav-btn nav-btn-update" title="点击更新最新招标数据">
+            <span class="module-icon">🔄</span>更新数据
+          </button>
+          <button onclick="showTokenConfigDialog()" id="token-config-btn" class="nav-btn nav-btn-secondary" title="配置 GitHub Token" style="font-size: var(--text-xs); padding: var(--space-1) var(--space-2);">
+            <span class="module-icon">⚙️</span>Token 配置
+          </button>
+        </div>
       </div>
-    </header>
+    </nav>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="flex flex-wrap gap-4">
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-sm font-medium text-gray-700 mb-1">地区筛选</label>
-          <select id="filter-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">全部地区</option>
-          </select>
+    <!-- 筛选区 -->
+    <div class="card filter-section mb-6">
+      <div class="card-body">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="font-size: 20px;">🔍</span>
+          <h2 style="font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--slate-800);">智能筛选</h2>
         </div>
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-sm font-medium text-gray-700 mb-1">类型筛选</label>
-          <select id="filter-type" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">全部类型</option>
-            <option value="招标">招标</option>
-            <option value="采购">采购</option>
-            <option value="谈判">谈判</option>
-            <option value="变更">变更</option>
-          </select>
+        <div class="grid md:grid-cols-4 gap-4">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">📍 地区筛选</label>
+            <select id="filter-region" class="form-select">
+              <option value="">全部地区</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">📋 类型筛选</label>
+            <select id="filter-type" class="form-select">
+              <option value="">全部类型</option>
+              <option value="招标">招标</option>
+              <option value="采购">采购</option>
+              <option value="谈判">谈判</option>
+              <option value="变更">变更</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">📅 发布日期</label>
+            <input type="date" id="filter-date" class="form-input">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">🔎 搜索</label>
+            <input type="text" id="search-input" placeholder="关键词搜索..." class="form-input">
+          </div>
         </div>
-        <div class="flex-1 min-w-[200px]">
-          <label class="block text-sm font-medium text-gray-700 mb-1">搜索</label>
-          <input type="text" id="search-input" placeholder="关键词搜索..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <div class="mt-4 flex items-center gap-3">
+          <button onclick="clearFilters()" class="btn btn-outline btn-sm">
+            🧹 清除所有筛选
+          </button>
+          <span id="filter-count" style="font-size: var(--text-sm); color: var(--slate-500);"></span>
         </div>
       </div>
     </div>
 
-    <!-- Project List -->
+    <!-- 项目列表 -->
     <div id="project-list" class="space-y-4">
       <!-- Projects will be rendered here -->
     </div>
 
-    <!-- Loading -->
-    <div id="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p class="mt-4 text-gray-600">加载中...</p>
+    <!-- 分页 -->
+    <div id="pagination" class="mt-6 card">
+      <div class="card-body">
+        <div class="flex items-center justify-between flex-col sm:flex-row gap-4">
+          <div class="text-sm text-gray-600" id="pagination-info">
+            共 0 条 | 第 1/1 页
+          </div>
+          <div class="flex items-center gap-2" id="pagination-controls">
+            <!-- Pagination buttons will be rendered here -->
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Error -->
-    <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-      <p class="font-medium">加载失败</p>
-      <p id="error-message" class="text-sm mt-1"></p>
+    <!-- 加载状态 -->
+    <div id="loading" class="text-center py-12">
+      <div class="spinner mx-auto"></div>
+      <p class="mt-4" style="color: var(--slate-500); font-weight: var(--font-medium);">正在加载项目数据...</p>
+    </div>
+
+    <!-- 错误提示 -->
+    <div id="error" class="hidden card" style="background: linear-gradient(135deg, #fef2f2, #fff); border-color: #fecaca;">
+      <div class="card-body text-center">
+        <p class="text-xl mb-2">⚠️ 加载失败</p>
+        <p id="error-message" class="text-sm" style="color: var(--slate-600);"></p>
+        <button onclick="loadData()" class="btn btn-primary mt-4">🔄 重新加载</button>
+      </div>
+    </div>
+    
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden empty-state">
+      <div class="empty-state-icon">📭</div>
+      <h3 style="font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--slate-700); margin-bottom: var(--space-2);">暂无项目</h3>
+      <p style="color: var(--slate-500);">调整筛选条件或清除筛选查看所有项目</p>
+      <button onclick="clearFilters()" class="btn btn-primary mt-4">清除筛选</button>
     </div>
   </div>
 
   <script>
     let allProjects = [];
+    let filteredProjects = [];
     let regions = new Set();
+    
+    // Pagination settings
+    const ITEMS_PER_PAGE = 20;
+    let currentPage = 1;
+    let totalPages = 1;
 
     // Render a single project card
     function renderProject(project, index) {
-      const isExpanded = project._expanded ? 'block' : 'hidden';
       const regionBadge = project.region ? 
-        `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${project.region}</span>` : '';
+        `<span class="badge badge-primary">📍 ${project.region}</span>` : '';
       
       const typeTags = (project.description || '').split(',').map(t => t.trim()).filter(t => t).map(t => 
-        `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">${t}</span>`
+        `<span class="badge badge-gray">${t}</span>`
       ).join(' ');
 
+      const isExpanded = project._expanded ? 'expanded' : '';
+      const arrowClass = project._expanded ? 'expanded' : '';
+
       return `
-        <div class="project-card bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-          <div class="p-4 cursor-pointer" onclick="toggleProject(${index})">
+        <div class="project-card card ${isExpanded}" data-index="${index}">
+          <div class="p-5 cursor-pointer" onclick="toggleProject(${index})">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">${project.title}</h3>
-                <div class="flex flex-wrap gap-2 mb-2">
+                <div class="flex flex-wrap gap-2 mb-3">
                   ${regionBadge}
                   ${typeTags}
                 </div>
-                <div class="text-sm text-gray-500">
+                <h3 class="text-lg font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold); line-height: 1.4;">${project.title}</h3>
+                <div class="flex items-center gap-4 mt-3" style="font-size: var(--text-sm); color: var(--slate-500);">
                   <span>📅 ${project.publish_date || '未知日期'}</span>
+                  ${project.amount ? `<span>💰 ${project.amount}</span>` : ''}
                 </div>
               </div>
               <div class="flex-shrink-0">
-                <svg class="w-6 h-6 text-gray-400 transform transition-transform ${project._expanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 expand-arrow ${arrowClass}" style="color: var(--slate-400); width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </div>
             </div>
           </div>
           
-          <div id="detail-${index}" class="${isExpanded} border-t border-gray-200 bg-gray-50 px-4 py-3">
-            <div class="detail-row">
-              <span class="detail-label">发布日期:</span>
-              <span>${project.publish_date || '未知'}</span>
+          <div class="project-detail ${isExpanded}" style="background: linear-gradient(180deg, var(--slate-50) 0%, white 100%); border-top: 1px solid var(--slate-100);">
+            <div class="p-5">
+              <div class="detail-row">
+                <span class="detail-label">发布日期</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.publish_date || '未知'}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">地区</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.region || '未知'}</span>
+              </div>
+              ${project.amount ? `
+              <div class="detail-row">
+                <span class="detail-label">金额</span>
+                <span style="color: var(--emerald-600); font-weight: var(--font-semibold);">${project.amount}</span>
+              </div>` : ''}
+              ${project.deadline ? `
+              <div class="detail-row">
+                <span class="detail-label">截止日期</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.deadline}</span>
+              </div>` : ''}
+              ${project.contact ? `
+              <div class="detail-row">
+                <span class="detail-label">联系方式</span>
+                <span style="color: var(--slate-700);">${project.contact}</span>
+              </div>` : ''}
+              ${project.link ? `
+              <div class="mt-4 pt-4" style="border-top: 1px solid var(--slate-200);">
+                <a href="${project.link}" target="_blank" class="inline-flex items-center" style="color: var(--cosmic-600); font-weight: var(--font-semibold); text-decoration: none;">
+                  查看原文 
+                  <svg class="w-4 h-4 ml-1" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                </a>
+              </div>` : ''}
+              <!-- 数据闭环按钮 -->
+              <div class="mt-4 pt-4 flex flex-wrap gap-2" style="border-top: 1px solid var(--slate-200);">
+                <a href="bid_factory/index.html?projectName=${encodeURIComponent(project.title || '')}&tenderer=${encodeURIComponent(project.tenderer || project.contact || '')}&budget=${encodeURIComponent(project.amount || '')}&link=${encodeURIComponent(project.link || '')}" class="btn btn-success btn-sm">
+                  📄 生成标书
+                </a>
+                <a href="win_prediction.html?projectName=${encodeURIComponent(project.title || '')}&budget=${encodeURIComponent((project.amount || '').replace(/[^0-9.]/g, ''))}&tenderUnit=${encodeURIComponent(project.tenderer || project.contact || '')}&region=${encodeURIComponent(project.region || '')}" class="btn btn-primary btn-sm">
+                  📊 预测中标
+                </a>
+              </div>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">地区:</span>
-              <span>${project.region || '未知'}</span>
-            </div>
-            ${project.amount ? `
-            <div class="detail-row">
-              <span class="detail-label">金额:</span>
-              <span>${project.amount}</span>
-            </div>` : ''}
-            ${project.deadline ? `
-            <div class="detail-row">
-              <span class="detail-label">截止日期:</span>
-              <span>${project.deadline}</span>
-            </div>` : ''}
-            ${project.contact ? `
-            <div class="detail-row">
-              <span class="detail-label">联系方式:</span>
-              <span>${project.contact}</span>
-            </div>` : ''}
-            ${project.link ? `
-            <div class="mt-3 pt-3 border-t border-gray-200">
-              <a href="${project.link}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
-                查看原文 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-              </a>
-            </div>` : ''}
           </div>
         </div>
       `;
@@ -141,31 +434,475 @@
 
     // Toggle project detail expansion
     function toggleProject(index) {
-      const project = allProjects[index];
-      project._expanded = !project._expanded;
-      renderProjects();
+      const project = allProjects.find(p => p.title === filteredProjects[index].title && p.publish_date === filteredProjects[index].publish_date);
+      if (project) {
+        project._expanded = !project._expanded;
+        renderPage(currentPage);
+      }
     }
 
-    // Filter and render projects
-    function renderProjects() {
+    // Filter projects
+    function filterProjects() {
       const regionFilter = document.getElementById('filter-region').value;
       const typeFilter = document.getElementById('filter-type').value;
+      const dateFilter = document.getElementById('filter-date').value;
       const searchQuery = document.getElementById('search-input').value.toLowerCase();
 
-      const filtered = allProjects.filter(p => {
+      filteredProjects = allProjects.filter(p => {
         const matchRegion = !regionFilter || p.region === regionFilter;
         const matchType = !typeFilter || (p.description && p.description.includes(typeFilter));
+        const matchDate = !dateFilter || (p.publish_date && p.publish_date.startsWith(dateFilter));
         const matchSearch = !searchQuery || p.title.toLowerCase().includes(searchQuery);
-        return matchRegion && matchType && matchSearch;
+        return matchRegion && matchType && matchDate && matchSearch;
       });
 
-      const listEl = document.getElementById('project-list');
-      listEl.innerHTML = filtered.map((p, i) => {
-        const originalIndex = allProjects.indexOf(p);
-        return renderProject(p, originalIndex);
-      }).join('');
+      // Update pagination
+      totalPages = Math.max(1, Math.ceil(filteredProjects.length / ITEMS_PER_PAGE));
+      currentPage = Math.min(currentPage, totalPages);
+      
+      renderPage(currentPage);
+      
+      // Update filter count
+      const countEl = document.getElementById('filter-count');
+      if (filteredProjects.length !== allProjects.length) {
+        countEl.textContent = `已筛选 ${filteredProjects.length} / ${allProjects.length} 个项目`;
+      } else {
+        countEl.textContent = '';
+      }
+    }
 
-      document.getElementById('stats-total').textContent = `显示 ${filtered.length} / ${allProjects.length} 个项目`;
+    // Render pagination controls
+    function renderPagination(page, total) {
+      const controlsEl = document.getElementById('pagination-controls');
+      const infoEl = document.getElementById('pagination-info');
+      
+      infoEl.textContent = `共 ${filteredProjects.length} 条 | 第 ${page}/${total} 页`;
+      
+      let html = '';
+      
+      // Previous button
+      html += `<button class="pagination-btn" ${page <= 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})">← 上一页</button>`;
+      
+      // Page numbers
+      const maxVisible = 5;
+      let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+      let endPage = Math.min(total, startPage + maxVisible - 1);
+      
+      if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+      
+      if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) {
+          html += `<span style="padding: 0 var(--space-2); color: var(--slate-400);">...</span>`;
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      
+      if (endPage < total) {
+        if (endPage < total - 1) {
+          html += `<span style="padding: 0 var(--space-2); color: var(--slate-400);">...</span>`;
+        }
+        html += `<button class="pagination-btn" onclick="goToPage(${total})">${total}</button>`;
+      }
+      
+      // Next button
+      html += `<button class="pagination-btn" ${page >= total ? 'disabled' : ''} onclick="goToPage(${page + 1})">下一页 →</button>`;
+      
+      controlsEl.innerHTML = html;
+    }
+
+    // Render current page
+    function renderPage(page) {
+      const start = (page - 1) * ITEMS_PER_PAGE;
+      const end = Math.min(start + ITEMS_PER_PAGE, filteredProjects.length);
+      const pageProjects = filteredProjects.slice(start, end);
+
+      const listEl = document.getElementById('project-list');
+      
+      if (pageProjects.length === 0) {
+        listEl.innerHTML = '';
+        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('pagination').classList.add('hidden');
+      } else {
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('pagination').classList.remove('hidden');
+        listEl.innerHTML = pageProjects.map((p, i) => {
+          const originalIndex = filteredProjects.indexOf(p);
+          return renderProject(p, start + i);
+        }).join('');
+      }
+
+      renderPagination(page, totalPages);
+      document.getElementById('stats-total').textContent = `📊 显示 ${filteredProjects.length} / ${allProjects.length} 个项目`;
+    }
+
+    // Go to specific page
+    function goToPage(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderPage(page);
+      // Scroll to top of project list
+      document.getElementById('project-list').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Clear all filters
+    function clearFilters() {
+      document.getElementById('filter-region').value = '';
+      document.getElementById('filter-type').value = '';
+      document.getElementById('filter-date').value = '';
+      document.getElementById('search-input').value = '';
+      currentPage = 1;
+      filterProjects();
+    }
+
+    // Show update toast notification
+    function showUpdateToast(type, title, message) {
+      // Remove existing toast
+      const existingToast = document.querySelector('.update-toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+      
+      const toast = document.createElement('div');
+      toast.className = `update-toast ${type}`;
+      toast.innerHTML = `
+        <div class="update-toast-title">${title}</div>
+        <div class="update-toast-message">${message}</div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto remove after 5 seconds (except for updating state)
+      if (type !== 'updating') {
+        setTimeout(() => {
+          toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+      
+      return toast;
+    }
+
+    // GitHub 配置
+    const GITHUB_CONFIG = {
+      owner: 'aluxfly',           // GitHub 用户名
+      repo: 'ali',                // 仓库名
+      workflowId: 'update-data.yml' // 工作流文件名
+    };
+
+    // 从 localStorage 获取 Token（纯前端方案）
+    function getGitHubToken() {
+      return localStorage.getItem('github_token') || '';
+    }
+
+    function saveGitHubToken(token) {
+      localStorage.setItem('github_token', token);
+    }
+
+    // 检查是否已配置 Token
+    function isTokenConfigured() {
+      return getGitHubToken().length > 0;
+    }
+
+    // 显示 Token 配置对话框
+    function showTokenConfigDialog() {
+      const existingDialog = document.querySelector('.token-config-dialog');
+      if (existingDialog) existingDialog.remove();
+      
+      const currentToken = getGitHubToken();
+      
+      const dialog = document.createElement('div');
+      dialog.className = 'token-config-dialog';
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      `;
+      
+      dialog.innerHTML = `
+        <div style="
+          background: white;
+          border-radius: var(--radius-2xl);
+          padding: var(--space-6);
+          max-width: 500px;
+          width: 90%;
+          box-shadow: var(--shadow-2xl);
+        ">
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--slate-800); margin-bottom: var(--space-4);">
+            🔑 配置 GitHub Token
+          </h3>
+          <p style="color: var(--slate-600); font-size: var(--text-sm); margin-bottom: var(--space-4); line-height: 1.6;">
+            由于网站部署在 GitHub Pages（纯静态），需要您配置自己的 GitHub Token 来触发自动更新。
+            Token 仅存储在您的浏览器本地，不会发送给任何人。
+          </p>
+          <div style="margin-bottom: var(--space-4);">
+            <label style="display: block; font-weight: var(--font-medium); color: var(--slate-700); margin-bottom: var(--space-2); font-size: var(--text-sm);">
+              Personal Access Token
+            </label>
+            <input 
+              type="password" 
+              id="token-input" 
+              value="${currentToken}"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              style="
+                width: 100%;
+                padding: var(--space-3);
+                border: 1px solid var(--slate-300);
+                border-radius: var(--radius-lg);
+                font-size: var(--text-sm);
+                font-family: monospace;
+              "
+            />
+          </div>
+          <div style="background: var(--slate-50); padding: var(--space-3); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+            <p style="font-size: var(--text-xs); color: var(--slate-600); margin: 0;">
+              <strong>如何获取 Token：</strong><br>
+              1. 访问 <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--cosmic-600);">GitHub Token 设置</a><br>
+              2. 点击 "Generate new token (classic)"<br>
+              3. 勾选权限：<strong>repo</strong> 和 <strong>workflow</strong><br>
+              4. 生成并复制 Token
+            </p>
+          </div>
+          <div style="display: flex; gap: var(--space-3); justify-content: flex-end;">
+            <button 
+              onclick="this.closest('.token-config-dialog').remove()"
+              style="
+                padding: var(--space-2) var(--space-4);
+                border: 1px solid var(--slate-300);
+                background: white;
+                border-radius: var(--radius-lg);
+                cursor: pointer;
+                font-size: var(--text-sm);
+                color: var(--slate-600);
+              "
+            >
+              取消
+            </button>
+            <button 
+              onclick="saveTokenAndClose()"
+              style="
+                padding: var(--space-2) var(--space-4);
+                background: linear-gradient(135deg, var(--cosmic-600), var(--cosmic-700));
+                color: white;
+                border: none;
+                border-radius: var(--radius-lg);
+                cursor: pointer;
+                font-size: var(--text-sm);
+                font-weight: var(--font-medium);
+              "
+            >
+              保存配置
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+    }
+
+    function saveTokenAndClose() {
+      const tokenInput = document.getElementById('token-input');
+      const token = tokenInput.value.trim();
+      
+      if (token) {
+        saveGitHubToken(token);
+        showUpdateToast('success', '✅ Token 已保存', 'GitHub Token 已安全存储在本地浏览器中');
+      } else {
+        localStorage.removeItem('github_token');
+        showUpdateToast('success', '✅ Token 已清除', '已删除存储的 Token');
+      }
+      
+      const dialog = document.querySelector('.token-config-dialog');
+      if (dialog) dialog.remove();
+    }
+
+    // 直接调用 GitHub API 触发 workflow（纯前端方案）
+    async function triggerGitHubWorkflowDirect(token) {
+      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/actions/workflows/${GITHUB_CONFIG.workflowId}/dispatches`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            trigger_source: 'website-button'
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { message: response.statusText };
+        }
+        throw new Error(`GitHub API 错误 (${response.status}): ${errorData.message || response.statusText}`);
+      }
+      
+      console.log('✅ GitHub Actions 已触发');
+    }
+
+    // Update data function - 纯前端方案
+    async function updateData() {
+      const updateBtn = document.getElementById('update-btn');
+      
+      // Prevent multiple clicks
+      if (updateBtn.classList.contains('updating')) {
+        return;
+      }
+      
+      // 检查是否配置了 Token
+      if (!isTokenConfigured()) {
+        showTokenConfigDialog();
+        return;
+      }
+      
+      // Set updating state
+      updateBtn.classList.add('updating');
+      updateBtn.disabled = true;
+      
+      // Show updating toast
+      const toast = showUpdateToast('updating', '🔄 正在更新数据', '正在触发 GitHub Actions 工作流...');
+      
+      try {
+        const startTime = Date.now();
+        const token = getGitHubToken();
+        
+        // 直接调用 GitHub API
+        await triggerGitHubWorkflowDirect(token);
+        
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        
+        // Update toast to success
+        toast.className = 'update-toast success';
+        toast.innerHTML = `
+          <div class="update-toast-title">✅ 更新任务已触发</div>
+          <div class="update-toast-message">
+            GitHub Actions 正在运行中...<br>
+            耗时：${duration}秒（触发）<br>
+            数据更新完成后页面将自动刷新<br>
+            <a href="https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/actions" target="_blank" 
+               style="color: var(--cosmic-600); text-decoration: underline;">查看运行状态 →</a>
+          </div>
+        `;
+        
+        // 轮询检查更新状态（最长 5 分钟）
+        pollUpdateStatus();
+        
+      } catch (err) {
+        console.error('更新数据失败:', err);
+        
+        // 如果是 401 错误，提示 Token 可能无效
+        if (err.message.includes('401') || err.message.includes('Bad credentials')) {
+          // 清除无效 Token
+          localStorage.removeItem('github_token');
+          
+          toast.className = 'update-toast error';
+          toast.innerHTML = `
+            <div class="update-toast-title">❌ Token 无效</div>
+            <div class="update-toast-message">
+              ${err.message}<br>
+              Token 可能已过期或被撤销<br>
+              <button onclick="showTokenConfigDialog()" 
+                style="
+                  margin-top: var(--space-2);
+                  padding: var(--space-1) var(--space-3);
+                  background: var(--cosmic-600);
+                  color: white;
+                  border: none;
+                  border-radius: var(--radius-md);
+                  cursor: pointer;
+                  font-size: var(--text-xs);
+                "
+              >
+                重新配置 Token →
+              </button>
+            </div>
+          `;
+        } else {
+          // Update toast to error
+          toast.className = 'update-toast error';
+          toast.innerHTML = `
+            <div class="update-toast-title">❌ 触发失败</div>
+            <div class="update-toast-message">
+              ${err.message}<br>
+              <button onclick="showTokenConfigDialog()" 
+                style="
+                  margin-top: var(--space-2);
+                  padding: var(--space-1) var(--space-3);
+                  background: var(--cosmic-600);
+                  color: white;
+                  border: none;
+                  border-radius: var(--radius-md);
+                  cursor: pointer;
+                  font-size: var(--text-xs);
+                "
+              >
+                检查 Token 配置 →
+              </button>
+            </div>
+          `;
+        }
+      } finally {
+        // Reset button state
+        updateBtn.classList.remove('updating');
+        updateBtn.disabled = false;
+      }
+    }
+
+    // 轮询检查数据更新状态
+    async function pollUpdateStatus(maxAttempts = 30, interval = 10000) {
+      let attempts = 0;
+      
+      const checkStatus = async () => {
+        attempts++;
+        
+        try {
+          const response = await fetch('data/projects.json?t=' + Date.now());
+          if (!response.ok) return;
+          
+          const data = await response.json();
+          const lastUpdated = new Date(data.last_updated || data.crawl_date);
+          const now = new Date();
+          
+          // 如果数据是在最近 5 分钟内更新的，刷新页面
+          if ((now - lastUpdated) < 5 * 60 * 1000) {
+            console.log('✅ 检测到数据已更新，刷新页面...');
+            setTimeout(() => location.reload(), 2000);
+            return;
+          }
+        } catch (err) {
+          console.error('检查状态失败:', err);
+        }
+        
+        // 继续轮询
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, interval);
+        } else {
+          console.log('⏱️ 轮询超时，请手动刷新页面');
+        }
+      };
+      
+      checkStatus();
     }
 
     // Populate region dropdown
@@ -183,12 +920,16 @@
     // Load data
     async function loadData() {
       try {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('error').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        
         const response = await fetch('data/projects.json');
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         
         allProjects = data.projects || [];
-        document.getElementById('stats-date').textContent = `数据更新于：${data.crawl_date || '未知'}`;
+        document.getElementById('stats-date').textContent = `🕐 更新于：${data.crawl_date || '未知'}`;
         
         // Collect regions
         allProjects.forEach(p => {
@@ -196,7 +937,9 @@
         });
         
         populateRegions();
-        renderProjects();
+        filteredProjects = [...allProjects];
+        totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+        renderPage(1);
         
         document.getElementById('loading').classList.add('hidden');
       } catch (err) {
@@ -207,12 +950,37 @@
     }
 
     // Event listeners
-    document.getElementById('filter-region').addEventListener('change', renderProjects);
-    document.getElementById('filter-type').addEventListener('change', renderProjects);
-    document.getElementById('search-input').addEventListener('input', renderProjects);
+    document.getElementById('filter-region').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('filter-type').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('filter-date').addEventListener('change', () => { currentPage = 1; filterProjects(); });
+    document.getElementById('search-input').addEventListener('input', () => { currentPage = 1; filterProjects(); });
+
+    // 页面加载时检查 Token 配置状态
+    function checkTokenStatus() {
+      const tokenConfigBtn = document.getElementById('token-config-btn');
+      if (!isTokenConfigured()) {
+        // 未配置 Token，显示提示
+        tokenConfigBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        tokenConfigBtn.style.color = 'white';
+        tokenConfigBtn.title = '⚠️ 未配置 GitHub Token，点击配置';
+        
+        // 首次访问时显示提示（仅一次）
+        if (!localStorage.getItem('token_config_shown')) {
+          setTimeout(() => {
+            showUpdateToast('updating', '⚠️ 需要配置 GitHub Token', '点击"Token 配置"按钮或"更新数据"按钮进行配置');
+            localStorage.setItem('token_config_shown', 'true');
+          }, 2000);
+        }
+      } else {
+        tokenConfigBtn.style.background = '';
+        tokenConfigBtn.style.color = '';
+        tokenConfigBtn.title = '配置 GitHub Token';
+      }
+    }
 
     // Initialize
     loadData();
+    checkTokenStatus();
   </script>
 </body>
 </html>
