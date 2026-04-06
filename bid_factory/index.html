@@ -4,20 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>标书工厂 - 智能标书生成器</title>
-    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/design-system.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
+    <!-- 背景装饰 -->
+    <div class="body-bg"></div>
+    
     <div class="container container-narrow">
         <!-- 统一导航栏 -->
         <nav class="navbar">
             <div class="navbar-content">
                 <div class="navbar-brand">
-                    <div class="navbar-logo" style="background: linear-gradient(135deg, #10b981, #059669);">📄</div>
+                    <div class="navbar-logo" style="background: var(--bid-gradient);">📄</div>
                     <div class="navbar-title">
-                        <h1>标书工厂</h1>
+                        <h1 class="text-gradient" style="background: var(--bid-gradient);">标书工厂</h1>
                         <p>智能标书生成器 - 上传招标公告，一键生成完整标书</p>
                     </div>
                 </div>
@@ -38,6 +41,14 @@
 
         <main class="card">
             <div class="card-body">
+                <!-- 步骤指示器 -->
+                <div class="step-indicator">
+                    <div class="step-dot active" id="dot-1"></div>
+                    <div class="step-dot" id="dot-2"></div>
+                    <div class="step-dot" id="dot-3"></div>
+                    <div class="step-dot" id="dot-4"></div>
+                </div>
+                
                 <!-- 步骤 1: 上传招标公告 -->
                 <section class="step" id="step1">
                     <div class="step-header">
@@ -45,6 +56,12 @@
                         <h2>上传招标公告</h2>
                     </div>
                     <div class="step-content">
+                        <div style="margin-bottom: var(--space-4);">
+                            <p style="color: var(--slate-600); font-size: var(--text-sm); line-height: 1.7;">
+                                请将招标公告内容粘贴到下方文本框中，系统将自动解析关键信息。
+                                支持国家电网、南方电网等主流招标公告格式。
+                            </p>
+                        </div>
                         <textarea 
                             id="announcementInput" 
                             placeholder="请粘贴招标公告内容...
@@ -58,13 +75,13 @@
 项目地点：某某市
 技术要求：...
 资质要求：..."
-                            rows="12"
+                            rows="14"
                             class="form-textarea"></textarea>
                         <div class="btn-group mt-4">
-                            <button class="btn btn-primary" onclick="parseAnnouncement()">
+                            <button class="btn btn-primary" onclick="parseAnnouncement()" style="flex: 2;">
                                 🔍 解析公告信息
                             </button>
-                            <button class="btn btn-secondary" onclick="loadSample()">
+                            <button class="btn btn-secondary" onclick="loadSample()" style="flex: 1;">
                                 📋 加载示例
                             </button>
                         </div>
@@ -78,6 +95,11 @@
                         <h2>确认项目信息</h2>
                     </div>
                     <div class="step-content">
+                        <div style="margin-bottom: var(--space-4);">
+                            <p style="color: var(--slate-600); font-size: var(--text-sm);">
+                                请核对以下信息，点击字段可直接编辑修改
+                            </p>
+                        </div>
                         <div class="info-grid" id="parsedInfo">
                             <!-- 动态填充 -->
                         </div>
@@ -112,23 +134,23 @@
                 <!-- 步骤 4: 下载结果 -->
                 <section class="step" id="step4" style="display: none;">
                     <div class="step-header">
-                        <span class="step-number">4</span>
+                        <span class="step-number" style="background: var(--emerald-500); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">✓</span>
                         <h2>下载标书</h2>
                     </div>
                     <div class="step-content">
                         <div class="success-message">
                             <div class="success-icon">✅</div>
                             <h3>标书生成完成！</h3>
-                            <p>请选择要下载的文档：</p>
+                            <p>请选择要下载的文档，或一键下载全部文件</p>
                         </div>
                         <div class="download-grid" id="downloadOptions">
                             <!-- 动态填充 -->
                         </div>
                         <div class="btn-group mt-4">
-                            <button class="btn btn-primary" onclick="downloadAll()">
+                            <button class="btn btn-primary" onclick="downloadAll()" style="flex: 2;">
                                 📦 下载全部
                             </button>
-                            <button class="btn btn-secondary" onclick="startOver()">
+                            <button class="btn btn-secondary" onclick="startOver()" style="flex: 1;">
                                 🔄 重新生成
                             </button>
                         </div>
@@ -138,25 +160,25 @@
                             </button>
                         </div>
                         <!-- 标书检查结果区域 -->
-                        <div id="checkResult" style="display: none; margin-top: 24px;">
+                        <div id="checkResult" style="display: none; margin-top: var(--space-8);">
                             <div class="step-header">
-                                <span class="step-number" style="background: #10b981;">✓</span>
+                                <span class="step-number" style="background: var(--emerald-500); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">✓</span>
                                 <h2>标书完整度检查</h2>
                             </div>
                             <div class="step-content">
                                 <!-- 总体评分 -->
-                                <div id="overallScore" style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
-                                    <div style="font-size: 48px; font-weight: bold; color: #10b981;" id="scoreValue">--</div>
-                                    <div style="color: #6b7280;">完整度评分</div>
+                                <div id="overallScore" style="text-align: center; padding: var(--space-8); margin-bottom: var(--space-6);">
+                                    <div id="scoreValue">--</div>
+                                    <div style="color: var(--slate-500); font-weight: var(--font-medium); margin-top: var(--space-2);">完整度评分</div>
                                 </div>
                                 <!-- 技术标检查 -->
-                                <div id="techCheck" style="margin-bottom: 20px;"></div>
+                                <div id="techCheck" style="margin-bottom: var(--space-6);"></div>
                                 <!-- 商务标检查 -->
-                                <div id="businessCheck" style="margin-bottom: 20px;"></div>
+                                <div id="businessCheck" style="margin-bottom: var(--space-6);"></div>
                                 <!-- 风险提示 -->
-                                <div id="riskWarning" style="padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
-                                    <strong style="color: #92400e;">⚠️ 风险提示</strong>
-                                    <ul id="riskList" style="margin: 8px 0 0 20px; color: #92400e;"></ul>
+                                <div id="riskWarning" style="padding: var(--space-4); background: linear-gradient(135deg, #fef3c7, #fffbeb); border-left: 6px solid var(--amber-500); border-radius: var(--radius-xl); display: none;">
+                                    <strong style="color: var(--amber-800); font-size: var(--text-base);">⚠️ 风险提示</strong>
+                                    <ul id="riskList" style="margin: var(--space-2) 0 0 var(--space-6); color: var(--amber-700); line-height: 1.8;"></ul>
                                 </div>
                             </div>
                         </div>
@@ -171,5 +193,31 @@
     </div>
 
     <script src="app.js"></script>
+    <script>
+        // 步骤指示器更新函数
+        function updateStepIndicator(step) {
+            for (let i = 1; i <= 4; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                dot.classList.remove('active', 'completed');
+                if (i < step) {
+                    dot.classList.add('completed');
+                } else if (i === step) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+
+        // 重写 showStep 函数以包含指示器更新
+        const originalShowStep = window.showStep;
+        window.showStep = function(step) {
+            if (originalShowStep) originalShowStep(step);
+            updateStepIndicator(step);
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStepIndicator(1);
+        });
+    </script>
 </body>
 </html>

@@ -4,22 +4,134 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>项目雷达 - 国家电网招标公告</title>
-  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/design-system.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .project-card { transition: all 0.2s ease; }
-    .project-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    .detail-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 6px 0; }
-    .detail-label { font-weight: 600; color: #6b7280; }
-    .pagination-btn { padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
-    .pagination-btn:hover { background: #f3f4f6; }
-    .pagination-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
-    .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .module-icon { font-size: 28px; }
+    /* 页面特定样式 */
+    .project-card {
+      transition: all var(--transition-slow);
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    .project-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-2xl);
+    }
+    
+    .project-card.expanded {
+      border-color: var(--cosmic-300);
+    }
+    
+    .detail-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      font-size: var(--text-sm);
+    }
+    
+    .detail-label {
+      font-weight: var(--font-semibold);
+      color: var(--slate-500);
+    }
+    
+    .pagination-btn {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--slate-300);
+      background: white;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--slate-600);
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--cosmic-50);
+      border-color: var(--cosmic-400);
+      color: var(--cosmic-700);
+      transform: translateY(-1px);
+    }
+    
+    .pagination-btn.active {
+      background: var(--gradient-primary);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(59, 69, 232, 0.4);
+    }
+    
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .module-icon {
+      font-size: 18px;
+    }
+    
+    /* 筛选区增强 */
+    .filter-section {
+      background: linear-gradient(180deg, var(--slate-50) 0%, white 100%);
+      border: 1px solid var(--slate-200);
+    }
+    
+    /* 项目卡片展开动画 */
+    .project-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height var(--transition-slow), opacity var(--transition-base);
+      opacity: 0;
+    }
+    
+    .project-detail.expanded {
+      max-height: 1000px;
+      opacity: 1;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-20);
+      background: var(--slate-50);
+      border-radius: var(--radius-2xl);
+      border: 2px dashed var(--slate-300);
+    }
+    
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: var(--space-4);
+      opacity: 0.5;
+    }
+    
+    /* 加载骨架屏 */
+    .skeleton {
+      background: linear-gradient(90deg, var(--slate-100) 25%, var(--slate-200) 50%, var(--slate-100) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+    
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    /* 展开箭头动画 */
+    .expand-arrow {
+      transition: transform var(--transition-base);
+    }
+    
+    .expand-arrow.expanded {
+      transform: rotate(180deg);
+    }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="container mx-auto px-4 py-6 max-w-6xl">
+<body>
+  <!-- 背景装饰 -->
+  <div class="body-bg"></div>
+  
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
     <!-- 统一导航栏 -->
     <nav class="navbar">
       <div class="navbar-content">
@@ -29,8 +141,8 @@
             <h1>项目雷达</h1>
             <p>国家电网招标公告聚合平台</p>
             <div class="navbar-stats">
-              <span id="stats-total">共 0 个项目</span>
-              <span id="stats-date">数据更新于：--</span>
+              <span id="stats-total">📊 共 0 个项目</span>
+              <span id="stats-date">🕐 更新于：--</span>
             </div>
           </div>
         </div>
@@ -50,17 +162,21 @@
     </nav>
 
     <!-- 筛选区 -->
-    <div class="card mb-6">
+    <div class="card filter-section mb-6">
       <div class="card-body">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="font-size: 20px;">🔍</span>
+          <h2 style="font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--slate-800);">智能筛选</h2>
+        </div>
         <div class="grid md:grid-cols-4 gap-4">
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">地区筛选</label>
+            <label class="form-label">📍 地区筛选</label>
             <select id="filter-region" class="form-select">
               <option value="">全部地区</option>
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">类型筛选</label>
+            <label class="form-label">📋 类型筛选</label>
             <select id="filter-type" class="form-select">
               <option value="">全部类型</option>
               <option value="招标">招标</option>
@@ -70,16 +186,19 @@
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">发布日期</label>
+            <label class="form-label">📅 发布日期</label>
             <input type="date" id="filter-date" class="form-input">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">搜索</label>
+            <label class="form-label">🔎 搜索</label>
             <input type="text" id="search-input" placeholder="关键词搜索..." class="form-input">
           </div>
         </div>
-        <div class="mt-4">
-          <button onclick="clearFilters()" class="btn btn-outline btn-sm">清除所有筛选</button>
+        <div class="mt-4 flex items-center gap-3">
+          <button onclick="clearFilters()" class="btn btn-outline btn-sm">
+            🧹 清除所有筛选
+          </button>
+          <span id="filter-count" style="font-size: var(--text-sm); color: var(--slate-500);"></span>
         </div>
       </div>
     </div>
@@ -106,13 +225,24 @@
     <!-- 加载状态 -->
     <div id="loading" class="text-center py-12">
       <div class="spinner mx-auto"></div>
-      <p class="mt-4 text-gray-600">加载中...</p>
+      <p class="mt-4" style="color: var(--slate-500); font-weight: var(--font-medium);">正在加载项目数据...</p>
     </div>
 
     <!-- 错误提示 -->
-    <div id="error" class="hidden bg-danger p-4 rounded-lg border border-danger" style="background: #fef2f2; border-color: #fecaca;">
-      <p class="font-medium text-danger">⚠️ 加载失败</p>
-      <p id="error-message" class="text-sm mt-1 text-gray-600"></p>
+    <div id="error" class="hidden card" style="background: linear-gradient(135deg, #fef2f2, #fff); border-color: #fecaca;">
+      <div class="card-body text-center">
+        <p class="text-xl mb-2">⚠️ 加载失败</p>
+        <p id="error-message" class="text-sm" style="color: var(--slate-600);"></p>
+        <button onclick="loadData()" class="btn btn-primary mt-4">🔄 重新加载</button>
+      </div>
+    </div>
+    
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden empty-state">
+      <div class="empty-state-icon">📭</div>
+      <h3 style="font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--slate-700); margin-bottom: var(--space-2);">暂无项目</h3>
+      <p style="color: var(--slate-500);">调整筛选条件或清除筛选查看所有项目</p>
+      <button onclick="clearFilters()" class="btn btn-primary mt-4">清除筛选</button>
     </div>
   </div>
 
@@ -128,74 +258,82 @@
 
     // Render a single project card
     function renderProject(project, index) {
-      const isExpanded = project._expanded ? 'block' : 'hidden';
       const regionBadge = project.region ? 
-        `<span class="badge badge-primary">${project.region}</span>` : '';
+        `<span class="badge badge-primary">📍 ${project.region}</span>` : '';
       
       const typeTags = (project.description || '').split(',').map(t => t.trim()).filter(t => t).map(t => 
         `<span class="badge badge-gray">${t}</span>`
       ).join(' ');
 
+      const isExpanded = project._expanded ? 'expanded' : '';
+      const arrowClass = project._expanded ? 'expanded' : '';
+
       return `
-        <div class="project-card card">
-          <div class="p-4 cursor-pointer" onclick="toggleProject(${index})">
+        <div class="project-card card ${isExpanded}" data-index="${index}">
+          <div class="p-5 cursor-pointer" onclick="toggleProject(${index})">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">${project.title}</h3>
-                <div class="flex flex-wrap gap-2 mb-2">
+                <div class="flex flex-wrap gap-2 mb-3">
                   ${regionBadge}
                   ${typeTags}
                 </div>
-                <div class="text-sm text-gray-500">
+                <h3 class="text-lg font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold); line-height: 1.4;">${project.title}</h3>
+                <div class="flex items-center gap-4 mt-3" style="font-size: var(--text-sm); color: var(--slate-500);">
                   <span>📅 ${project.publish_date || '未知日期'}</span>
+                  ${project.amount ? `<span>💰 ${project.amount}</span>` : ''}
                 </div>
               </div>
               <div class="flex-shrink-0">
-                <svg class="w-6 h-6 text-gray-400 transform transition-transform ${project._expanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 expand-arrow ${arrowClass}" style="color: var(--slate-400); width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </div>
             </div>
           </div>
           
-          <div id="detail-${index}" class="${isExpanded} border-t border-gray-200 bg-gray-50 px-4 py-3">
-            <div class="detail-row">
-              <span class="detail-label">发布日期:</span>
-              <span>${project.publish_date || '未知'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">地区:</span>
-              <span>${project.region || '未知'}</span>
-            </div>
-            ${project.amount ? `
-            <div class="detail-row">
-              <span class="detail-label">金额:</span>
-              <span>${project.amount}</span>
-            </div>` : ''}
-            ${project.deadline ? `
-            <div class="detail-row">
-              <span class="detail-label">截止日期:</span>
-              <span>${project.deadline}</span>
-            </div>` : ''}
-            ${project.contact ? `
-            <div class="detail-row">
-              <span class="detail-label">联系方式:</span>
-              <span>${project.contact}</span>
-            </div>` : ''}
-            ${project.link ? `
-            <div class="mt-3 pt-3 border-t border-gray-200">
-              <a href="${project.link}" target="_blank" class="inline-flex items-center text-primary font-medium hover:underline">
-                查看原文 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-              </a>
-            </div>` : ''}
-            <!-- 数据闭环按钮 -->
-            <div class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2">
-              <a href="bid_factory/index.html?projectName=${encodeURIComponent(project.title || '')}&tenderer=${encodeURIComponent(project.tenderer || project.contact || '')}&budget=${encodeURIComponent(project.amount || '')}&link=${encodeURIComponent(project.link || '')}" class="btn btn-success btn-sm">
-                📄 生成标书
-              </a>
-              <a href="win_prediction.html?projectName=${encodeURIComponent(project.title || '')}&budget=${encodeURIComponent((project.amount || '').replace(/[^0-9.]/g, ''))}&tenderUnit=${encodeURIComponent(project.tenderer || project.contact || '')}&region=${encodeURIComponent(project.region || '')}" class="btn btn-primary btn-sm">
-                📊 预测中标
-              </a>
+          <div class="project-detail ${isExpanded}" style="background: linear-gradient(180deg, var(--slate-50) 0%, white 100%); border-top: 1px solid var(--slate-100);">
+            <div class="p-5">
+              <div class="detail-row">
+                <span class="detail-label">发布日期</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.publish_date || '未知'}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">地区</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.region || '未知'}</span>
+              </div>
+              ${project.amount ? `
+              <div class="detail-row">
+                <span class="detail-label">金额</span>
+                <span style="color: var(--emerald-600); font-weight: var(--font-semibold);">${project.amount}</span>
+              </div>` : ''}
+              ${project.deadline ? `
+              <div class="detail-row">
+                <span class="detail-label">截止日期</span>
+                <span style="color: var(--slate-700); font-weight: var(--font-medium);">${project.deadline}</span>
+              </div>` : ''}
+              ${project.contact ? `
+              <div class="detail-row">
+                <span class="detail-label">联系方式</span>
+                <span style="color: var(--slate-700);">${project.contact}</span>
+              </div>` : ''}
+              ${project.link ? `
+              <div class="mt-4 pt-4" style="border-top: 1px solid var(--slate-200);">
+                <a href="${project.link}" target="_blank" class="inline-flex items-center" style="color: var(--cosmic-600); font-weight: var(--font-semibold); text-decoration: none;">
+                  查看原文 
+                  <svg class="w-4 h-4 ml-1" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                </a>
+              </div>` : ''}
+              <!-- 数据闭环按钮 -->
+              <div class="mt-4 pt-4 flex flex-wrap gap-2" style="border-top: 1px solid var(--slate-200);">
+                <a href="bid_factory/index.html?projectName=${encodeURIComponent(project.title || '')}&tenderer=${encodeURIComponent(project.tenderer || project.contact || '')}&budget=${encodeURIComponent(project.amount || '')}&link=${encodeURIComponent(project.link || '')}" class="btn btn-success btn-sm">
+                  📄 生成标书
+                </a>
+                <a href="win_prediction.html?projectName=${encodeURIComponent(project.title || '')}&budget=${encodeURIComponent((project.amount || '').replace(/[^0-9.]/g, ''))}&tenderUnit=${encodeURIComponent(project.tenderer || project.contact || '')}&region=${encodeURIComponent(project.region || '')}" class="btn btn-primary btn-sm">
+                  📊 预测中标
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -231,6 +369,14 @@
       currentPage = Math.min(currentPage, totalPages);
       
       renderPage(currentPage);
+      
+      // Update filter count
+      const countEl = document.getElementById('filter-count');
+      if (filteredProjects.length !== allProjects.length) {
+        countEl.textContent = `已筛选 ${filteredProjects.length} / ${allProjects.length} 个项目`;
+      } else {
+        countEl.textContent = '';
+      }
     }
 
     // Render pagination controls
@@ -257,7 +403,7 @@
       if (startPage > 1) {
         html += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
         if (startPage > 2) {
-          html += `<span class="px-2 text-gray-400">...</span>`;
+          html += `<span style="padding: 0 var(--space-2); color: var(--slate-400);">...</span>`;
         }
       }
       
@@ -267,7 +413,7 @@
       
       if (endPage < total) {
         if (endPage < total - 1) {
-          html += `<span class="px-2 text-gray-400">...</span>`;
+          html += `<span style="padding: 0 var(--space-2); color: var(--slate-400);">...</span>`;
         }
         html += `<button class="pagination-btn" onclick="goToPage(${total})">${total}</button>`;
       }
@@ -285,13 +431,22 @@
       const pageProjects = filteredProjects.slice(start, end);
 
       const listEl = document.getElementById('project-list');
-      listEl.innerHTML = pageProjects.map((p, i) => {
-        const originalIndex = filteredProjects.indexOf(p);
-        return renderProject(p, start + i);
-      }).join('');
+      
+      if (pageProjects.length === 0) {
+        listEl.innerHTML = '';
+        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('pagination').classList.add('hidden');
+      } else {
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('pagination').classList.remove('hidden');
+        listEl.innerHTML = pageProjects.map((p, i) => {
+          const originalIndex = filteredProjects.indexOf(p);
+          return renderProject(p, start + i);
+        }).join('');
+      }
 
       renderPagination(page, totalPages);
-      document.getElementById('stats-total').textContent = `显示 ${filteredProjects.length} / ${allProjects.length} 个项目`;
+      document.getElementById('stats-total').textContent = `📊 显示 ${filteredProjects.length} / ${allProjects.length} 个项目`;
     }
 
     // Go to specific page
@@ -328,12 +483,16 @@
     // Load data
     async function loadData() {
       try {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('error').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        
         const response = await fetch('data/projects.json');
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         
         allProjects = data.projects || [];
-        document.getElementById('stats-date').textContent = `数据更新于：${data.crawl_date || '未知'}`;
+        document.getElementById('stats-date').textContent = `🕐 更新于：${data.crawl_date || '未知'}`;
         
         // Collect regions
         allProjects.forEach(p => {

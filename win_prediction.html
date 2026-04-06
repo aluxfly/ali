@@ -4,27 +4,152 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>中标预测 - 项目雷达</title>
-  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/design-system.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .prediction-card { transition: all 0.3s ease; }
-    .prediction-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .probability-high { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .probability-medium { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-    .probability-low { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-    .module-icon { font-size: 28px; }
+    /* 页面特定样式 */
+    .prediction-card {
+      transition: all var(--transition-slow);
+    }
+    
+    .prediction-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+    }
+    
+    .probability-high {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+    }
+    
+    .probability-medium {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+    }
+    
+    .probability-low {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+    }
+    
+    .module-icon {
+      font-size: 18px;
+    }
+    
+    /* 概率仪表盘 */
+    .probability-gauge {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+    
+    /* 策略卡片 */
+    .strategy-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background: linear-gradient(135deg, var(--cosmic-50), white);
+      border: 1px solid var(--cosmic-100);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-base);
+    }
+    
+    .strategy-item:hover {
+      transform: translateX(4px);
+      border-color: var(--cosmic-300);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* 竞争对手卡片 */
+    .competitor-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      background: var(--slate-50);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--slate-200);
+      transition: all var(--transition-base);
+    }
+    
+    .competitor-item:hover {
+      background: white;
+      border-color: var(--cosmic-300);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* 因素卡片 */
+    .factor-card {
+      padding: var(--space-4);
+      border-radius: var(--radius-xl);
+      text-align: center;
+      transition: all var(--transition-base);
+      border: 2px solid transparent;
+    }
+    
+    .factor-card:hover {
+      transform: scale(1.05);
+    }
+    
+    .factor-positive {
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      border-color: var(--emerald-200);
+    }
+    
+    .factor-negative {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border-color: var(--coral-200);
+    }
+    
+    .factor-neutral {
+      background: linear-gradient(135deg, var(--slate-50), var(--slate-100));
+      border-color: var(--slate-200);
+    }
+    
+    /* 输入表单增强 */
+    .input-card {
+      background: linear-gradient(180deg, var(--slate-50) 0%, white 100%);
+      border: 1px solid var(--slate-200);
+    }
+    
+    /* 空状态 */
+    .empty-prediction {
+      text-align: center;
+      padding: var(--space-16);
+    }
+    
+    .empty-prediction-icon {
+      font-size: 80px;
+      margin-bottom: var(--space-4);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    
+    /* 结果区域动画 */
+    .result-section {
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    /* Chart 容器 */
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <div class="container mx-auto px-4 py-6 max-w-6xl">
+<body>
+  <!-- 背景装饰 -->
+  <div class="body-bg"></div>
+  
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
     <!-- 统一导航栏 -->
     <nav class="navbar">
       <div class="navbar-content">
         <div class="navbar-brand">
-          <div class="navbar-logo" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">🎯</div>
+          <div class="navbar-logo" style="background: var(--prediction-gradient);">🎯</div>
           <div class="navbar-title">
-            <h1>中标预测</h1>
+            <h1 class="text-gradient" style="background: var(--prediction-gradient);">中标预测</h1>
             <p>基于历史数据的智能中标概率分析</p>
           </div>
         </div>
@@ -44,26 +169,29 @@
     </nav>
 
     <!-- 输入表单 -->
-    <div class="card mb-6">
+    <div class="card input-card mb-8">
       <div class="card-header">
-        <h2 class="text-xl font-semibold text-gray-800">📋 项目信息输入</h2>
+        <div class="flex items-center gap-3">
+          <span style="font-size: 24px;">📋</span>
+          <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">项目信息输入</h2>
+        </div>
       </div>
       <div class="card-body">
         <div class="grid md:grid-cols-3 gap-4">
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">项目名称</label>
+            <label class="form-label">📝 项目名称</label>
             <input type="text" id="project-name" placeholder="请输入项目名称" class="form-input">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">预算金额（万元）</label>
+            <label class="form-label">💰 预算金额（万元）</label>
             <input type="number" id="budget-amount" placeholder="例如：500" class="form-input">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">招标单位</label>
+            <label class="form-label">🏢 招标单位</label>
             <input type="text" id="tender-unit" placeholder="请输入招标单位" class="form-input">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">项目类型</label>
+            <label class="form-label">📑 项目类型</label>
             <select id="project-type" class="form-select">
               <option value="">请选择类型</option>
               <option value="construction">工程施工</option>
@@ -74,7 +202,7 @@
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">所在地区</label>
+            <label class="form-label">📍 所在地区</label>
             <select id="project-region" class="form-select">
               <option value="">请选择地区</option>
               <option value="华北">华北</option>
@@ -87,7 +215,7 @@
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">企业资质等级</label>
+            <label class="form-label">🏆 企业资质等级</label>
             <select id="qualification" class="form-select">
               <option value="">请选择资质</option>
               <option value="A">甲级/一级</option>
@@ -97,53 +225,56 @@
           </div>
         </div>
         <div class="mt-6 btn-group">
-          <button onclick="predictWin()" class="btn btn-primary btn-lg">
+          <button onclick="predictWin()" class="btn btn-primary btn-lg" style="padding: var(--space-3) var(--space-8); font-size: var(--text-base);">
             🔮 开始预测
           </button>
-          <button onclick="clearForm()" class="btn btn-secondary btn-lg">
-            清空表单
+          <button onclick="clearForm()" class="btn btn-secondary btn-lg" style="padding: var(--space-3) var(--space-8); font-size: var(--text-base);">
+            🧹 清空表单
           </button>
         </div>
       </div>
     </div>
 
     <!-- 预测结果 -->
-    <div id="prediction-result" class="hidden">
+    <div id="prediction-result" class="hidden result-section">
       <!-- 概率卡片 -->
-      <div class="card mb-6">
+      <div class="card mb-8">
         <div class="card-header">
-          <h2 class="text-xl font-semibold text-gray-800">📊 中标概率预测</h2>
+          <div class="flex items-center gap-3">
+            <span style="font-size: 24px;">📊</span>
+            <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">中标概率预测</h2>
+          </div>
         </div>
         <div class="card-body">
-          <div class="grid lg:grid-cols-2 gap-6">
+          <div class="grid lg:grid-cols-2 gap-8">
             <div class="flex items-center justify-center">
-              <div id="probability-gauge" class="relative w-48 h-48">
+              <div class="probability-gauge">
                 <canvas id="probabilityChart"></canvas>
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="text-center">
-                    <div id="probability-value" class="text-4xl font-bold text-gray-800">0%</div>
-                    <div class="text-sm text-gray-500">中标概率</div>
+                    <div id="probability-value" class="text-4xl font-bold" style="font-size: 42px; font-weight: var(--font-extrabold); color: var(--slate-800);">0%</div>
+                    <div class="text-sm" style="color: var(--slate-500); font-weight: var(--font-medium);">中标概率</div>
                   </div>
                 </div>
               </div>
             </div>
             <div class="flex flex-col justify-center">
-              <div id="probability-level" class="probability-high text-white rounded-lg p-6 mb-4 text-center">
-                <div class="text-2xl font-bold" id="level-text">高概率</div>
-                <div class="text-sm mt-1" id="level-desc">建议积极参与投标</div>
+              <div id="probability-level" class="probability-high text-white rounded-lg p-6 mb-4 text-center" style="border-radius: var(--radius-xl);">
+                <div class="text-2xl font-bold" id="level-text" style="font-size: 24px; font-weight: var(--font-bold);">高概率</div>
+                <div class="text-sm mt-1" id="level-desc" style="opacity: 0.9;">建议积极参与投标</div>
               </div>
               <div class="space-y-2">
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span class="text-gray-600">综合评分</span>
-                  <span id="score-value" class="font-semibold text-gray-800">0</span>
+                <div class="flex items-center justify-between p-4" style="background: var(--slate-50); border-radius: var(--radius-lg);">
+                  <span style="color: var(--slate-600); font-weight: var(--font-medium);">综合评分</span>
+                  <span id="score-value" style="font-weight: var(--font-bold); color: var(--slate-800); font-size: var(--text-lg);">0</span>
                 </div>
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span class="text-gray-600">竞争对手数量</span>
-                  <span id="competitor-count" class="font-semibold text-gray-800">0</span>
+                <div class="flex items-center justify-between p-4" style="background: var(--slate-50); border-radius: var(--radius-lg);">
+                  <span style="color: var(--slate-600); font-weight: var(--font-medium);">竞争对手数量</span>
+                  <span id="competitor-count" style="font-weight: var(--font-bold); color: var(--slate-800); font-size: var(--text-lg);">0</span>
                 </div>
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span class="text-gray-600">历史中标率</span>
-                  <span id="history-rate" class="font-semibold text-gray-800">0%</span>
+                <div class="flex items-center justify-between p-4" style="background: var(--slate-50); border-radius: var(--radius-lg);">
+                  <span style="color: var(--slate-600); font-weight: var(--font-medium);">历史中标率</span>
+                  <span id="history-rate" style="font-weight: var(--font-bold); color: var(--slate-800); font-size: var(--text-lg);">0%</span>
                 </div>
               </div>
             </div>
@@ -152,11 +283,14 @@
       </div>
 
       <!-- 策略与分析 -->
-      <div class="grid md:grid-cols-2 gap-6 mb-6">
+      <div class="grid md:grid-cols-2 gap-6 mb-8">
         <!-- 投标策略 -->
         <div class="card">
           <div class="card-header">
-            <h2 class="text-xl font-semibold text-gray-800">💡 推荐投标策略</h2>
+            <div class="flex items-center gap-3">
+              <span style="font-size: 22px;">💡</span>
+              <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">推荐投标策略</h2>
+            </div>
           </div>
           <div class="card-body">
             <div id="strategy-list" class="space-y-3">
@@ -168,7 +302,10 @@
         <!-- 竞争对手分析 -->
         <div class="card">
           <div class="card-header">
-            <h2 class="text-xl font-semibold text-gray-800">🏢 竞争对手分析</h2>
+            <div class="flex items-center gap-3">
+              <span style="font-size: 22px;">🏢</span>
+              <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">竞争对手分析</h2>
+            </div>
           </div>
           <div class="card-body">
             <div id="competitor-list" class="space-y-3">
@@ -179,12 +316,15 @@
       </div>
 
       <!-- 历史趋势 -->
-      <div class="card mb-6">
+      <div class="card mb-8">
         <div class="card-header">
-          <h2 class="text-xl font-semibold text-gray-800">📈 历史中标趋势</h2>
+          <div class="flex items-center gap-3">
+            <span style="font-size: 22px;">📈</span>
+            <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">历史中标趋势</h2>
+          </div>
         </div>
         <div class="card-body">
-          <div class="h-64">
+          <div class="chart-container">
             <canvas id="trendChart"></canvas>
           </div>
         </div>
@@ -193,7 +333,10 @@
       <!-- 关键因素 -->
       <div class="card">
         <div class="card-header">
-          <h2 class="text-xl font-semibold text-gray-800">🔑 关键影响因素</h2>
+          <div class="flex items-center gap-3">
+            <span style="font-size: 22px;">🔑</span>
+            <h2 class="text-xl font-semibold" style="color: var(--slate-800); font-weight: var(--font-bold);">关键影响因素</h2>
+          </div>
         </div>
         <div class="card-body">
           <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4" id="factors-grid">
@@ -204,10 +347,10 @@
     </div>
 
     <!-- 空状态 -->
-    <div id="empty-state" class="text-center py-12">
-      <div class="text-6xl mb-4">🎯</div>
-      <h3 class="text-xl font-semibold text-gray-700 mb-2">请输入项目信息</h3>
-      <p class="text-gray-500">填写上方表单后点击"开始预测"按钮</p>
+    <div id="empty-state" class="empty-prediction">
+      <div class="empty-prediction-icon">🎯</div>
+      <h3 class="text-xl font-semibold mb-2" style="color: var(--slate-700); font-weight: var(--font-bold); font-size: var(--text-2xl);">请输入项目信息</h3>
+      <p style="color: var(--slate-500); font-size: var(--text-base);">填写上方表单后点击"开始预测"按钮，获取智能分析结果</p>
     </div>
   </div>
 
@@ -215,15 +358,15 @@
     let probabilityChart = null;
     let trendChart = null;
 
-    // Sample historical data (in production, this would come from backend)
+    // Sample historical data
     const historicalData = {
       winRates: [45, 52, 48, 55, 60, 58, 62, 65],
       months: ['1 月', '2 月', '3 月', '4 月', '5 月', '6 月', '7 月', '8 月']
     };
 
-    // Prediction logic (simplified rule-based engine)
+    // Prediction logic
     function calculatePrediction(formData) {
-      let score = 50; // Base score
+      let score = 50;
       const factors = [];
 
       // Budget factor
@@ -256,7 +399,7 @@
         factors.push({ name: '企业资质', value: '0', impact: 'neutral', desc: '丙级资质需加强' });
       }
 
-      // Region factor (simplified)
+      // Region factor
       if (formData.region) {
         score += 5;
         factors.push({ name: '地区匹配', value: '+5', impact: 'positive', desc: '地区经验丰富' });
@@ -268,13 +411,8 @@
         factors.push({ name: '类型匹配', value: '+8', impact: 'positive', desc: '专业领域对口' });
       }
 
-      // Normalize score to 0-100
       score = Math.max(0, Math.min(100, score));
-
-      // Calculate competitors based on budget
       const competitors = budget > 1000 ? 15 : budget > 500 ? 10 : budget > 100 ? 6 : 3;
-
-      // Historical win rate
       const historyRate = Math.round(45 + (score - 50) * 0.5);
 
       return {
@@ -286,7 +424,7 @@
       };
     }
 
-    // Generate strategies based on prediction
+    // Generate strategies
     function generateStrategies(prediction) {
       const strategies = [];
       
@@ -309,13 +447,12 @@
 
     // Generate competitor analysis
     function generateCompetitors(prediction) {
-      const competitorTypes = [
+      return [
         { name: '国有企业', strength: '高', probability: '35%' },
         { name: '大型民企', strength: '中高', probability: '28%' },
         { name: '本地企业', strength: '中', probability: '22%' },
         { name: '其他', strength: '低', probability: '15%' }
       ];
-      return competitorTypes;
     }
 
     // Render prediction results
@@ -323,13 +460,11 @@
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('prediction-result').classList.remove('hidden');
 
-      // Update probability value
       document.getElementById('probability-value').textContent = prediction.probability + '%';
       document.getElementById('score-value').textContent = prediction.probability;
       document.getElementById('competitor-count').textContent = prediction.competitors + '家';
       document.getElementById('history-rate').textContent = prediction.historyRate + '%';
 
-      // Update probability level card
       const levelCard = document.getElementById('probability-level');
       const levelText = document.getElementById('level-text');
       const levelDesc = document.getElementById('level-desc');
@@ -349,37 +484,33 @@
         levelDesc.textContent = '建议谨慎评估';
       }
 
-      // Render strategies
       const strategies = generateStrategies(prediction);
       document.getElementById('strategy-list').innerHTML = strategies.map(s => 
-        `<div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-          <span class="text-xl">${s.icon}</span>
-          <span class="text-gray-700">${s.text}</span>
+        `<div class="strategy-item">
+          <span style="font-size: 24px; flex-shrink: 0;">${s.icon}</span>
+          <span style="color: var(--slate-700); line-height: 1.5;">${s.text}</span>
         </div>`
       ).join('');
 
-      // Render competitors
       const competitors = generateCompetitors(prediction);
       document.getElementById('competitor-list').innerHTML = competitors.map(c => 
-        `<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        `<div class="competitor-item">
           <div>
-            <div class="font-medium text-gray-800">${c.name}</div>
-            <div class="text-sm text-gray-500">实力：${c.strength}</div>
+            <div style="font-weight: var(--font-semibold); color: var(--slate-800);">${c.name}</div>
+            <div style="font-size: var(--text-sm); color: var(--slate-500);">实力：${c.strength}</div>
           </div>
-          <div class="text-blue-600 font-semibold">${c.probability}</div>
+          <div style="color: var(--cosmic-600); font-weight: var(--font-bold); font-size: var(--text-lg);">${c.probability}</div>
         </div>`
       ).join('');
 
-      // Render factors
       document.getElementById('factors-grid').innerHTML = prediction.factors.map(f => 
-        `<div class="p-4 rounded-lg ${f.impact === 'positive' ? 'bg-green-50' : f.impact === 'negative' ? 'bg-red-50' : 'bg-gray-50'}">
-          <div class="text-sm text-gray-600">${f.name}</div>
-          <div class="text-xl font-bold ${f.impact === 'positive' ? 'text-green-600' : f.impact === 'negative' ? 'text-red-600' : 'text-gray-600'}">${f.value}</div>
-          <div class="text-xs text-gray-500 mt-1">${f.desc}</div>
+        `<div class="factor-card factor-${f.impact}">
+          <div style="font-size: var(--text-sm); color: var(--slate-600); font-weight: var(--font-medium); margin-bottom: var(--space-1);">${f.name}</div>
+          <div style="font-size: var(--text-2xl); font-weight: var(--font-extrabold); color: ${f.impact === 'positive' ? 'var(--emerald-600)' : f.impact === 'negative' ? 'var(--coral-600)' : 'var(--slate-600)'};">${f.value}</div>
+          <div style="font-size: var(--text-xs); color: var(--slate-500); margin-top: var(--space-1);">${f.desc}</div>
         </div>`
       ).join('');
 
-      // Update charts
       updateProbabilityChart(prediction.probability);
       updateTrendChart();
     }
@@ -400,7 +531,7 @@
           labels: ['中标概率', '未中标概率'],
           datasets: [{
             data: [probability, 100 - probability],
-            backgroundColor: [color, '#e5e7eb'],
+            backgroundColor: [color, '#e2e8f0'],
             borderWidth: 0
           }]
         },
@@ -434,7 +565,12 @@
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
-            fill: true
+            fill: true,
+            borderWidth: 3,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+            pointRadius: 5
           }]
         },
         options: {
@@ -447,7 +583,21 @@
             y: {
               beginAtZero: false,
               min: 30,
-              max: 80
+              max: 80,
+              grid: {
+                color: 'rgba(148, 163, 184, 0.2)'
+              },
+              ticks: {
+                color: '#64748b'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#64748b'
+              }
             }
           }
         }
@@ -465,19 +615,14 @@
         qualification: document.getElementById('qualification').value
       };
 
-      // Validate
       if (!formData.name || !formData.budget) {
         alert('请至少填写项目名称和预算金额');
         return;
       }
 
-      // Calculate prediction
       const prediction = calculatePrediction(formData);
-      
-      // Render results
       renderPrediction(prediction, formData);
       
-      // Scroll to results
       document.getElementById('prediction-result').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -496,15 +641,9 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-      // Charts will be initialized on first prediction
-      
-      // 检查 URL 参数，支持从项目雷达跳转
       parseUrlParams();
     });
 
-    /**
-     * 解析 URL 参数并自动填充表单
-     */
     function parseUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const projectName = params.get('projectName');
@@ -513,47 +652,28 @@
       const region = params.get('region');
       
       if (projectName || budget || tenderUnit || region) {
-        console.log('从 URL 参数加载项目信息:', { projectName, budget, tenderUnit, region });
-        
-        // 填充表单
-        if (projectName) {
-          document.getElementById('project-name').value = projectName;
-        }
-        
+        if (projectName) document.getElementById('project-name').value = projectName;
         if (budget) {
-          // 提取数字部分
           const budgetNum = budget.replace(/[^0-9.]/g, '');
-          if (budgetNum) {
-            document.getElementById('budget-amount').value = budgetNum;
-          }
+          if (budgetNum) document.getElementById('budget-amount').value = budgetNum;
         }
-        
-        if (tenderUnit) {
-          document.getElementById('tender-unit').value = tenderUnit;
-        }
-        
+        if (tenderUnit) document.getElementById('tender-unit').value = tenderUnit;
         if (region) {
-          // 尝试匹配地区
           const regionSelect = document.getElementById('project-region');
           for (let i = 0; i < regionSelect.options.length; i++) {
-            if (regionSelect.options[i].value === region || 
-                regionSelect.options[i].text.includes(region)) {
+            if (regionSelect.options[i].value === region || regionSelect.options[i].text.includes(region)) {
               regionSelect.selectedIndex = i;
               break;
             }
           }
         }
         
-        // 提示用户
         setTimeout(() => {
           alert('📊 已从项目雷达导入项目信息！\n\n请补充完整信息后点击"开始预测"按钮。');
         }, 500);
         
-        // 自动开始预测（如果关键信息已填写）
         if (projectName && budget) {
-          setTimeout(() => {
-            predictWin();
-          }, 1000);
+          setTimeout(() => predictWin(), 1000);
         }
       }
     }
