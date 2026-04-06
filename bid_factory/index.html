@@ -4,66 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>标书工厂 - 智能标书生成器</title>
+    <link rel="stylesheet" href="../css/common.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <style>
-      /* Navigation buttons - consistent with main page */
-      .nav-btn { padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
-      .nav-btn-primary { background: #5465ff; color: white; }
-      .nav-btn-primary:hover { background: #4354e6; }
-      .nav-btn-secondary { color: #6b7280; background: transparent; }
-      .nav-btn-secondary:hover { background: #f3f4f6; color: #374151; }
-      .nav-btn-active { background: #e0e7ff; color: #5465ff; }
-      .nav-btn-active:hover { background: #c7d2fe; }
-      
-      /* Flex utilities */
-      .flex { display: flex; }
-      .items-center { align-items: center; }
-      .gap-3 { gap: 12px; }
-      .gap-4 { gap: 16px; }
-      
-      @media (min-width: 640px) {
-        .sm\:flex-row { flex-direction: row; }
-        .sm\:items-center { align-items: center; }
-        .sm\:justify-between { justify-content: space-between; }
-      }
-      
-      @media (max-width: 640px) {
-        .nav-buttons { flex-direction: column; gap: 8px !important; align-items: flex-start !important; }
-        .nav-btn { width: 100%; text-align: center; }
-        .sm\:flex-row { flex-direction: column; }
-      }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1>📄 标书工厂</h1>
-                    <p class="subtitle">智能标书生成器 - 上传招标公告，一键生成完整标书</p>
+    <div class="container container-narrow">
+        <!-- 统一导航栏 -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <div class="navbar-brand">
+                    <div class="navbar-logo" style="background: linear-gradient(135deg, #10b981, #059669);">📄</div>
+                    <div class="navbar-title">
+                        <h1>标书工厂</h1>
+                        <p>智能标书生成器 - 上传招标公告，一键生成完整标书</p>
+                    </div>
                 </div>
-                <!-- Navigation Buttons -->
-                <div class="nav-buttons flex items-center gap-3">
-                    <a href="../index.html" class="nav-btn nav-btn-primary">项目搜索</a>
-                    <a href="../win_prediction.html" class="nav-btn nav-btn-secondary">中标预测</a>
-                    <a href="./index.html" class="nav-btn nav-btn-active">标书工厂</a>
+                <!-- 导航按钮 -->
+                <div class="navbar-nav">
+                    <a href="../index.html" class="nav-btn nav-btn-secondary nav-btn-radar">
+                        <span class="module-icon">📡</span>项目搜索
+                    </a>
+                    <a href="../win_prediction.html" class="nav-btn nav-btn-secondary nav-btn-prediction">
+                        <span class="module-icon">🎯</span>中标预测
+                    </a>
+                    <a href="./index.html" class="nav-btn nav-btn-active nav-btn-bid">
+                        <span class="module-icon">📄</span>标书工厂
+                    </a>
                 </div>
             </div>
-        </header>
+        </nav>
 
-        <main>
-            <!-- 步骤 1: 上传招标公告 -->
-            <section class="step" id="step1">
-                <div class="step-header">
-                    <span class="step-number">1</span>
-                    <h2>上传招标公告</h2>
-                </div>
-                <div class="step-content">
-                    <textarea 
-                        id="announcementInput" 
-                        placeholder="请粘贴招标公告内容...
+        <main class="card">
+            <div class="card-body">
+                <!-- 步骤 1: 上传招标公告 -->
+                <section class="step" id="step1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h2>上传招标公告</h2>
+                    </div>
+                    <div class="step-content">
+                        <textarea 
+                            id="announcementInput" 
+                            placeholder="请粘贴招标公告内容...
 
 示例格式：
 项目名称：某某采购项目
@@ -74,109 +58,111 @@
 项目地点：某某市
 技术要求：...
 资质要求：..."
-                        rows="12"></textarea>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="parseAnnouncement()">
-                            🔍 解析公告信息
-                        </button>
-                        <button class="btn btn-secondary" onclick="loadSample()">
-                            📋 加载示例
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 步骤 2: 确认信息 -->
-            <section class="step" id="step2" style="display: none;">
-                <div class="step-header">
-                    <span class="step-number">2</span>
-                    <h2>确认项目信息</h2>
-                </div>
-                <div class="step-content">
-                    <div class="info-grid" id="parsedInfo">
-                        <!-- 动态填充 -->
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-secondary" onclick="backToStep1()">
-                            ← 返回修改
-                        </button>
-                        <button class="btn btn-primary" onclick="generateBid()">
-                            ✨ 生成标书
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 步骤 3: 生成进度 -->
-            <section class="step" id="step3" style="display: none;">
-                <div class="step-header">
-                    <span class="step-number">3</span>
-                    <h2>生成标书</h2>
-                </div>
-                <div class="step-content">
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                    <p class="progress-text" id="progressText">正在生成...</p>
-                    <div class="loading-spinner" id="loadingSpinner">
-                        <div class="spinner"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 步骤 4: 下载结果 -->
-            <section class="step" id="step4" style="display: none;">
-                <div class="step-header">
-                    <span class="step-number">4</span>
-                    <h2>下载标书</h2>
-                </div>
-                <div class="step-content">
-                    <div class="success-message">
-                        <div class="success-icon">✅</div>
-                        <h3>标书生成完成！</h3>
-                        <p>请选择要下载的文档：</p>
-                    </div>
-                    <div class="download-grid" id="downloadOptions">
-                        <!-- 动态填充 -->
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="downloadAll()">
-                            📦 下载全部
-                        </button>
-                        <button class="btn btn-secondary" onclick="startOver()">
-                            🔄 重新生成
-                        </button>
-                    </div>
-                    <div class="btn-group" style="margin-top: 16px;">
-                        <button class="btn btn-primary" onclick="checkBid()" style="background: #10b981;">
-                            📋 标书检查
-                        </button>
-                    </div>
-                    <!-- 标书检查结果区域 -->
-                    <div id="checkResult" style="display: none; margin-top: 24px;">
-                        <div class="step-header">
-                            <span class="step-number" style="background: #10b981;">✓</span>
-                            <h2>标书完整度检查</h2>
-                        </div>
-                        <div class="step-content">
-                            <!-- 总体评分 -->
-                            <div id="overallScore" style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
-                                <div style="font-size: 48px; font-weight: bold; color: #10b981;" id="scoreValue">--</div>
-                                <div style="color: #6b7280;">完整度评分</div>
-                            </div>
-                            <!-- 技术标检查 -->
-                            <div id="techCheck" style="margin-bottom: 20px;"></div>
-                            <!-- 商务标检查 -->
-                            <div id="businessCheck" style="margin-bottom: 20px;"></div>
-                            <!-- 风险提示 -->
-                            <div id="riskWarning" style="padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
-                                <strong style="color: #92400e;">⚠️ 风险提示</strong>
-                                <ul id="riskList" style="margin: 8px 0 0 20px; color: #92400e;"></ul>
-                            </div>
+                            rows="12"
+                            class="form-textarea"></textarea>
+                        <div class="btn-group mt-4">
+                            <button class="btn btn-primary" onclick="parseAnnouncement()">
+                                🔍 解析公告信息
+                            </button>
+                            <button class="btn btn-secondary" onclick="loadSample()">
+                                📋 加载示例
+                            </button>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
+
+                <!-- 步骤 2: 确认信息 -->
+                <section class="step" id="step2" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h2>确认项目信息</h2>
+                    </div>
+                    <div class="step-content">
+                        <div class="info-grid" id="parsedInfo">
+                            <!-- 动态填充 -->
+                        </div>
+                        <div class="btn-group mt-4">
+                            <button class="btn btn-secondary" onclick="backToStep1()">
+                                ← 返回修改
+                            </button>
+                            <button class="btn btn-primary" onclick="generateBid()">
+                                ✨ 生成标书
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 步骤 3: 生成进度 -->
+                <section class="step" id="step3" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h2>生成标书</h2>
+                    </div>
+                    <div class="step-content">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">正在生成...</p>
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 步骤 4: 下载结果 -->
+                <section class="step" id="step4" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h2>下载标书</h2>
+                    </div>
+                    <div class="step-content">
+                        <div class="success-message">
+                            <div class="success-icon">✅</div>
+                            <h3>标书生成完成！</h3>
+                            <p>请选择要下载的文档：</p>
+                        </div>
+                        <div class="download-grid" id="downloadOptions">
+                            <!-- 动态填充 -->
+                        </div>
+                        <div class="btn-group mt-4">
+                            <button class="btn btn-primary" onclick="downloadAll()">
+                                📦 下载全部
+                            </button>
+                            <button class="btn btn-secondary" onclick="startOver()">
+                                🔄 重新生成
+                            </button>
+                        </div>
+                        <div class="btn-group mt-4">
+                            <button class="btn btn-success" onclick="checkBid()">
+                                📋 标书检查
+                            </button>
+                        </div>
+                        <!-- 标书检查结果区域 -->
+                        <div id="checkResult" style="display: none; margin-top: 24px;">
+                            <div class="step-header">
+                                <span class="step-number" style="background: #10b981;">✓</span>
+                                <h2>标书完整度检查</h2>
+                            </div>
+                            <div class="step-content">
+                                <!-- 总体评分 -->
+                                <div id="overallScore" style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                                    <div style="font-size: 48px; font-weight: bold; color: #10b981;" id="scoreValue">--</div>
+                                    <div style="color: #6b7280;">完整度评分</div>
+                                </div>
+                                <!-- 技术标检查 -->
+                                <div id="techCheck" style="margin-bottom: 20px;"></div>
+                                <!-- 商务标检查 -->
+                                <div id="businessCheck" style="margin-bottom: 20px;"></div>
+                                <!-- 风险提示 -->
+                                <div id="riskWarning" style="padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
+                                    <strong style="color: #92400e;">⚠️ 风险提示</strong>
+                                    <ul id="riskList" style="margin: 8px 0 0 20px; color: #92400e;"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
 
         <footer>
