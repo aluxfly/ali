@@ -36,10 +36,17 @@ body {
 
 /* 头部 */
 header {
-    text-align: center;
     color: white;
     margin-bottom: 30px;
     padding: 20px;
+}
+
+header > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
 }
 
 header h1 {
@@ -51,6 +58,16 @@ header h1 {
 .subtitle {
     font-size: 1.1rem;
     opacity: 0.9;
+}
+
+/* 响应式 header 布局 */
+@media (min-width: 640px) {
+    header > div {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+    }
 }
 
 /* 主内容区 */

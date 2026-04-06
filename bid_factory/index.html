@@ -7,12 +7,50 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+      /* Navigation buttons - consistent with main page */
+      .nav-btn { padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+      .nav-btn-primary { background: #5465ff; color: white; }
+      .nav-btn-primary:hover { background: #4354e6; }
+      .nav-btn-secondary { color: #6b7280; background: transparent; }
+      .nav-btn-secondary:hover { background: #f3f4f6; color: #374151; }
+      .nav-btn-active { background: #e0e7ff; color: #5465ff; }
+      .nav-btn-active:hover { background: #c7d2fe; }
+      
+      /* Flex utilities */
+      .flex { display: flex; }
+      .items-center { align-items: center; }
+      .gap-3 { gap: 12px; }
+      .gap-4 { gap: 16px; }
+      
+      @media (min-width: 640px) {
+        .sm\:flex-row { flex-direction: row; }
+        .sm\:items-center { align-items: center; }
+        .sm\:justify-between { justify-content: space-between; }
+      }
+      
+      @media (max-width: 640px) {
+        .nav-buttons { flex-direction: column; gap: 8px !important; align-items: flex-start !important; }
+        .nav-btn { width: 100%; text-align: center; }
+        .sm\:flex-row { flex-direction: column; }
+      }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📄 标书工厂</h1>
-            <p class="subtitle">智能标书生成器 - 上传招标公告，一键生成完整标书</p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1>📄 标书工厂</h1>
+                    <p class="subtitle">智能标书生成器 - 上传招标公告，一键生成完整标书</p>
+                </div>
+                <!-- Navigation Buttons -->
+                <div class="nav-buttons flex items-center gap-3">
+                    <a href="../index.html" class="nav-btn nav-btn-primary">项目搜索</a>
+                    <a href="../win_prediction.html" class="nav-btn nav-btn-secondary">中标预测</a>
+                    <a href="./index.html" class="nav-btn nav-btn-active">标书工厂</a>
+                </div>
+            </div>
         </header>
 
         <main>
